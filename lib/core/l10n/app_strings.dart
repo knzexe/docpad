@@ -1,3 +1,5 @@
+import '../constants/clinic_branding.dart';
+
 class AppStrings {
   const AppStrings(this.languageCode);
 
@@ -7,7 +9,6 @@ class AppStrings {
 
   String _t(String en, String bn) => isBangla ? bn : en;
 
-  String get appName => 'DocPad';
   String get home => _t('Home', 'হোম');
   String get patients => _t('Patients', 'রোগী');
   String get advice => _t('Advice', 'পরামর্শ');
@@ -23,14 +24,14 @@ class AppStrings {
   String get emptyTitle =>
       _t('No prescriptions yet', 'এখনো কোনো প্রেসক্রিপশন নেই');
   String get emptyBody => _t(
-    'When you document a visit, it will appear here. DocPad does not create sample patients.',
-    'আপনি কোনো ভিজিট লিখলে তা এখানে দেখা যাবে। ডকপ্যাড নমুনা রোগী তৈরি করে না।',
+    'When you document a visit, it will appear here. ${ClinicBranding.name} does not create sample patients.',
+    'আপনি কোনো ভিজিট লিখলে তা এখানে দেখা যাবে। ${ClinicBranding.name} নমুনা রোগী তৈরি করে না।',
   );
   String get createFirst =>
       _t('Create the first prescription', 'প্রথম প্রেসক্রিপশন লিখুন');
   String get disclaimer => _t(
-    'DocPad records what you type. It does not diagnose, select medicines, or calculate doses. You are responsible for every clinical entry.',
-    'ডকপ্যাড শুধু আপনার লেখা সংরক্ষণ করে। এটি রোগ নির্ণয় করে না, ওষুধ বাছাই করে না এবং মাত্রা হিসাব করে না। প্রতিটি ক্লিনিক্যাল তথ্যের দায়িত্ব আপনার।',
+    '${ClinicBranding.name} records what you type. It does not diagnose, select medicines, or calculate doses. You are responsible for every clinical entry.',
+    '${ClinicBranding.name} শুধু আপনার লেখা সংরক্ষণ করে। এটি রোগ নির্ণয় করে না, ওষুধ বাছাই করে না এবং মাত্রা হিসাব করে না। প্রতিটি ক্লিনিক্যাল তথ্যের দায়িত্ব আপনার।',
   );
   String get addYourName =>
       _t('Add your name in Settings', 'সেটিংসে আপনার নাম যোগ করুন');
@@ -73,8 +74,8 @@ class AppStrings {
   String get sexRequired => _t('Select sex.', 'লিঙ্গ নির্বাচন করুন।');
   String get clinicalAssessment => _t('Clinical assessment', 'ক্লিনিক্যাল নোট');
   String get clinicalHint => _t(
-    'Write only what you assessed. DocPad does not generate diagnoses or interpret investigations.',
-    'শুধু আপনার নিজের মূল্যায়ন লিখুন। ডকপ্যাড রোগ নির্ণয় বা পরীক্ষার ব্যাখ্যা তৈরি করে না।',
+    'Write only what you assessed. ${ClinicBranding.name} does not generate diagnoses or interpret investigations.',
+    'শুধু আপনার নিজের মূল্যায়ন লিখুন। ${ClinicBranding.name} রোগ নির্ণয় বা পরীক্ষার ব্যাখ্যা তৈরি করে না।',
   );
   String get chiefComplaint => _t('Chief complaint', 'প্রধান অভিযোগ');
   String get history =>
@@ -88,32 +89,30 @@ class AppStrings {
   String get medicineSearch => _t('Medicine search', 'ওষুধ খোঁজা');
   String get searchHint =>
       _t('Search your medicine library', 'আপনার ওষুধের লাইব্রেরিতে খুঁজুন');
+  String get addMedicineManually =>
+      _t('Add medicine manually', 'নিজে ওষুধ যোগ করুন');
+  String get addNewMedicine => _t('Add new medicine', 'নতুন ওষুধ যোগ করুন');
+  String get editMedicine => _t('Edit medicine', 'ওষুধ সম্পাদনা');
+  String get brandName => _t('Brand name', 'ব্র্যান্ডের নাম');
+  String get genericName => _t('Generic name', 'জেনেরিক নাম');
+  String get strength => _t('Strength', 'শক্তি');
+  String get dosageForm => _t('Dosage form', 'ওষুধের ধরন');
+  String get category => _t('Category', 'শ্রেণি');
+  String get notes => _t('Notes', 'নোট');
+  String get saveMedicine => _t('Save medicine', 'ওষুধ সংরক্ষণ');
   String get brands => _t('Brands', 'ব্র্যান্ড');
   String get generics => _t('Generics', 'জেনেরিক');
   String get demoTitle => _t('DEMO DATA', 'ডেমো ডেটা');
   String get demoBody => _t(
-    'These records come from a synthetic fixture provider, not a verified MedEx database. Do not use them for clinical decisions.',
-    'এই তথ্য কৃত্রিম ফিক্সচার থেকে এসেছে, যাচাই করা মেডেক্স তথ্য নয়। ক্লিনিক্যাল সিদ্ধান্তে ব্যবহার করবেন না।',
+    'These records are synthetic test data, not verified medicine information. Do not use them for clinical decisions.',
+    'এই তথ্য কৃত্রিম পরীক্ষার ডেটা, যাচাই করা ওষুধের তথ্য নয়। ক্লিনিক্যাল সিদ্ধান্তে ব্যবহার করবেন না।',
   );
-  String get liveBody => _t(
-    'The configured source marked this result as live. You still choose the product and enter every instruction yourself.',
-    'কনফিগার করা উৎস এই ফলাফলকে লাইভ হিসেবে চিহ্নিত করেছে। ওষুধ এবং প্রতিটি নির্দেশনা আপনাকেই লিখতে হবে।',
-  );
-  String get cachedLead => _t(
-    'Cached catalog result. This is not a current catalog.',
-    'ক্যাশ করা ক্যাটালগ ফল। এটি বর্তমান ক্যাটালগ নয়।',
-  );
-  String get loading => _t('Searching the catalog…', 'ক্যাটালগ খোঁজা হচ্ছে…');
-  String get noResults => _t(
-    'No catalog records matched that search.',
-    'এই খোঁজায় কোনো রেকর্ড মেলেনি।',
-  );
+  String get loading =>
+      _t('Searching your library…', 'আপনার লাইব্রেরিতে খোঁজা হচ্ছে…');
+  String get noResults =>
+      _t('No medicines matched that search.', 'এই খোঁজায় কোনো রেকর্ড মেলেনি।');
   String get loadMore => _t('Load more', 'আরও দেখুন');
-  String get catalogError => _t(
-    'The catalog request did not complete. Your prescription text is still on this screen.',
-    'ক্যাটালগ অনুরোধ সম্পূর্ণ হয়নি। প্রেসক্রিপশনের লেখা এই স্ক্রিনেই আছে।',
-  );
-  String get catalogInfo => _t('Catalog information', 'ক্যাটালগের তথ্য');
+  String get catalogInfo => _t('Medicine information', 'ওষুধের তথ্য');
   String get yourInstructions => _t('Your instructions', 'আপনার নির্দেশনা');
   String get instructionHint => _t(
     'Type each value yourself. Nothing here is calculated or suggested.',
@@ -154,8 +153,8 @@ class AppStrings {
   String get manufacturer => _t('Manufacturer', 'প্রস্তুতকারক');
   String get adviceLibrary => _t('Advice templates', 'পরামর্শ টেমপ্লেট');
   String get adviceHint => _t(
-    'Templates are your own words. DocPad does not generate advice.',
-    'টেমপ্লেট আপনার নিজের ভাষা। ডকপ্যাড পরামর্শ তৈরি করে না।',
+    'Templates are your own words. ${ClinicBranding.name} does not generate advice.',
+    'টেমপ্লেট আপনার নিজের ভাষা। ${ClinicBranding.name} পরামর্শ তৈরি করে না।',
   );
   String get addTemplate => _t('Add template', 'টেমপ্লেট যোগ');
   String get editTemplate => _t('Edit template', 'টেমপ্লেট সম্পাদনা');
@@ -265,64 +264,85 @@ class AppStrings {
   String get chooseLogo => _t('Choose logo', 'লোগো বেছে নিন');
   String get removeLogo => _t('Remove logo', 'লোগো সরান');
   String get logoTooLarge =>
-      _t('Choose an image under 512 KB.', '৫১২ কেবির ছোট একটি ছবি বেছে নিন।');
+      _t('Choose an image under 1 MB.', '১ মেগাবাইটের ছোট একটি ছবি বেছে নিন।');
   String get logoFailed =>
       _t('That image could not be read.', 'এই ছবি পড়া যায়নি।');
   String get language => _t('Language', 'ভাষা');
   String get english => 'English';
   String get bangla => 'বাংলা';
-  String get theme => _t('Theme', 'থিম');
-  String get themeLight => _t('Light', 'লাইট');
-  String get themeDark => _t('Dark', 'ডার্ক');
-  String get themeSystem => _t('System', 'সিস্টেম');
-  String get catalogAddress =>
-      _t('Medicine catalog address', 'ওষুধ ক্যাটালগের ঠিকানা');
-  String get catalogAddressHint => _t(
-    'DGHS terminology registry. Drug names are loaded from the medication feed after you save a TR API CONSUMER login.',
-    'ডিজিএইচএস টার্মিনোলজি রেজিস্ট্রি। টিআর এপিআই কনজিউমার লগইন সেভ করলে ওষুধের নাম মেডিকেশন ফিড থেকে আসে।',
-  );
-  String get trUsername => _t('TR username', 'টিআর ব্যবহারকারী');
-  String get trPassword => _t('TR password', 'টিআর পাসওয়ার্ড');
-  String get trPasswordHint => _t(
-    'Leave blank to keep the saved password.',
-    'সেভ করা পাসওয়ার্ড রাখতে খালি রাখুন।',
-  );
-  String get trAuthHint => _t(
-    'Basic login for a Terminology Registry user with the TR API CONSUMER role. It is stored in the device secure store.',
-    'টিআর এপিআই কনজিউমার ভূমিকার ব্যবহারকারীর বেসিক লগইন। এটি ডিভাইসের সিকিউর স্টোরে থাকে।',
-  );
   String get save => _t('Save', 'সংরক্ষণ');
-  String get testConnection => _t('Test connection', 'সংযোগ পরীক্ষা');
-  String get invalidUrl =>
-      _t('Enter an http or https address.', 'একটি http বা https ঠিকানা লিখুন।');
-  String get connectionFailed => _t(
-    'Could not reach the catalog at that address.',
-    'সেই ঠিকানায় ক্যাটালগে পৌঁছানো যায়নি।',
+  String get cloudSync => _t('Clinic cloud sync', 'ক্লিনিক ক্লাউড সিঙ্ক');
+  String get cloudSyncDescription => _t(
+    'Sign in to share the clinic profile, prescriptions, patients, advice, and medicine library across this clinic’s devices.',
+    'সাইন ইন করলে এই ক্লিনিকের ডিভাইসগুলোর মধ্যে প্রোফাইল, প্রেসক্রিপশন, রোগী, পরামর্শ ও ওষুধের লাইব্রেরি শেয়ার হবে।',
   );
-  String fixtureConnection(String name) => _t(
-    'Connected. Provider kind: fixture ($name). This is demo data, not verified MedEx records.',
-    'সংযুক্ত। প্রোভাইডারের ধরন: fixture ($name)। এটি ডেমো ডেটা, যাচাই করা মেডেক্স রেকর্ড নয়।',
+  String get cloudSyncWarning => _t(
+    'When this device first connects, its existing clinical records are uploaded to the linked clinic and shared with its members. Only continue on an approved clinic account and device.',
+    'এই ডিভাইস প্রথমবার যুক্ত হলে এর বিদ্যমান ক্লিনিক্যাল রেকর্ড যুক্ত ক্লিনিকে আপলোড হয়ে সদস্যদের সঙ্গে শেয়ার হবে। অনুমোদিত ক্লিনিক অ্যাকাউন্ট ও ডিভাইস ব্যবহার করুন।',
   );
-  String liveConnection(String name) => _t(
-    'Connected. Provider kind: live ($name).',
-    'সংযুক্ত। প্রোভাইডারের ধরন: live ($name)।',
+  String get cloudNotConfigured => _t(
+    'Cloud sync is not configured. The app is currently using encrypted local storage only.',
+    'ক্লাউড সিঙ্ক সেট করা নেই। অ্যাপটি এখন শুধু এনক্রিপ্ট করা স্থানীয় স্টোরেজ ব্যবহার করছে।',
+  );
+  String get cloudConfigurationIssue => _t(
+    'Supabase configuration is incomplete or invalid. Check the project URL and public key.',
+    'Supabase সেটআপ অসম্পূর্ণ বা ভুল। প্রজেক্ট URL ও পাবলিক কী পরীক্ষা করুন।',
+  );
+  String get cloudSignedOut => _t(
+    'Sign in to sync clinic records.',
+    'ক্লিনিকের রেকর্ড সিঙ্ক করতে সাইন ইন করুন।',
+  );
+  String get cloudConnecting =>
+      _t('Connecting to the clinic…', 'ক্লিনিকের সঙ্গে যুক্ত হচ্ছে…');
+  String get cloudSyncing =>
+      _t('Syncing clinic records…', 'ক্লিনিকের রেকর্ড সিঙ্ক হচ্ছে…');
+  String get cloudSynced =>
+      _t('Clinic records are up to date.', 'ক্লিনিকের রেকর্ড হালনাগাদ আছে।');
+  String get cloudNeedsMembership => _t(
+    'This account is not linked to a clinic. Ask the clinic administrator to grant access.',
+    'এই অ্যাকাউন্ট কোনো ক্লিনিকের সঙ্গে যুক্ত নয়। ক্লিনিক প্রশাসকের কাছে প্রবেশাধিকার চান।',
+  );
+  String get cloudDifferentClinic => _t(
+    'Sync is blocked because this device is already linked to a different clinic. Do not switch clinic accounts on a device containing clinical records.',
+    'এই ডিভাইস অন্য ক্লিনিকের সঙ্গে যুক্ত থাকায় সিঙ্ক বন্ধ। ক্লিনিক্যাল রেকর্ড থাকা ডিভাইসে অন্য ক্লিনিক অ্যাকাউন্ট ব্যবহার করবেন না।',
+  );
+  String get cloudSyncFailed => _t(
+    'Sync failed. Local records were kept; check the connection and try again.',
+    'সিঙ্ক ব্যর্থ হয়েছে। স্থানীয় রেকর্ড রাখা হয়েছে; সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+  );
+  String cloudPendingChanges(int count) => _t(
+    '$count changes are waiting to sync.',
+    'সিঙ্কের জন্য $countটি পরিবর্তন অপেক্ষা করছে।',
+  );
+  String get emailAddress => _t('Email address', 'ইমেইল ঠিকানা');
+  String get password => _t('Password', 'পাসওয়ার্ড');
+  String get signIn => _t('Sign in', 'সাইন ইন');
+  String get createAccount => _t('Create account', 'অ্যাকাউন্ট তৈরি');
+  String get signOut => _t('Sign out', 'সাইন আউট');
+  String get syncNow => _t('Sync now', 'এখন সিঙ্ক করুন');
+  String get cloudAccountCreated => _t(
+    'Account created. Check your email to confirm it, then sign in.',
+    'অ্যাকাউন্ট তৈরি হয়েছে। ইমেইল নিশ্চিত করে সাইন ইন করুন।',
+  );
+  String get cloudSignInComplete => _t(
+    'Signed in. Clinic access will appear after the administrator links this account.',
+    'সাইন ইন হয়েছে। প্রশাসক অ্যাকাউন্টটি যুক্ত করলে ক্লিনিকের প্রবেশাধিকার পাওয়া যাবে।',
   );
   String get dataManagement => _t('Data on this device', 'এই ডিভাইসের ডেটা');
   String get localStorageNotice => _t(
-    'Prescriptions, patients, and advice templates are stored only on this device. DocPad encrypts that database with a key kept in the platform secure store when that store is available. This is not a substitute for a secure, backed-up medical record system. Export what your clinic requires and protect this device.',
-    'প্রেসক্রিপশন, রোগী এবং পরামর্শ টেমপ্লেট শুধু এই ডিভাইসে থাকে। প্ল্যাটফর্মের সিকিউর স্টোর পাওয়া গেলে ডকপ্যাড সেই কী দিয়ে ডেটাবেস এনক্রিপ্ট করে। এটি নিরাপদ, ব্যাকআপসহ চিকিৎসা নথিব্যবস্থার বিকল্প নয়।',
+    'Prescriptions, patients, medicines, advice templates, and the clinic profile are encrypted in local storage and remain available offline. When Supabase is configured and an authorized clinic account is signed in, changes sync to that shared clinic. This is not a substitute for privacy, security, backup, and regulatory review.',
+    'প্রেসক্রিপশন, রোগী, ওষুধ, পরামর্শ টেমপ্লেট ও ক্লিনিক প্রোফাইল স্থানীয় স্টোরেজে এনক্রিপ্ট করা থাকে এবং অফলাইনে পাওয়া যায়। Supabase সেট করা ও অনুমোদিত অ্যাকাউন্টে সাইন ইন থাকলে পরিবর্তনগুলো ক্লিনিকে সিঙ্ক হয়।',
   );
-  String get eraseAll =>
-      _t('Erase local clinical data', 'স্থানীয় ক্লিনিক্যাল ডেটা মুছুন');
+  String get eraseAll => _t('Erase clinical data', 'ক্লিনিক্যাল ডেটা মুছুন');
   String get eraseBody => _t(
-    'This permanently removes prescriptions, the patient directory, advice templates, the catalog cache, and the doctor profile from this device. Theme, language, and the catalog address are kept.',
-    'এটি এই ডিভাইস থেকে প্রেসক্রিপশন, রোগীর তালিকা, পরামর্শ টেমপ্লেট, ক্যাটালগ ক্যাশ এবং চিকিৎসকের প্রোফাইল স্থায়ীভাবে মুছে দেবে। থিম, ভাষা এবং ক্যাটালগ ঠিকানা থাকবে।',
+    'This permanently removes prescriptions, patients, advice, medicines, and the custom clinic profile from this device and, when connected, the shared clinic on every device. Offline deletions are queued for sync. Language preferences stay.',
+    'এটি এই ডিভাইস এবং সংযুক্ত থাকলে সব ডিভাইসের শেয়ার করা ক্লিনিক থেকে প্রেসক্রিপশন, রোগী, পরামর্শ, ওষুধ ও কাস্টম ক্লিনিক প্রোফাইল স্থায়ীভাবে মুছে দেবে। অফলাইনে মুছে ফেলার কাজ পরে সিঙ্ক হবে। ভাষার পছন্দ থাকবে।',
   );
   String get typeDelete =>
       _t('Type DELETE to confirm', 'নিশ্চিত করতে DELETE লিখুন');
   String get eraseSuccess => _t(
-    'Local clinical data was erased.',
-    'স্থানীয় ক্লিনিক্যাল ডেটা মুছে ফেলা হয়েছে।',
+    'Clinical data was erased locally; any shared-clinic deletions are queued if offline.',
+    'ক্লিনিক্যাল ডেটা স্থানীয়ভাবে মুছে ফেলা হয়েছে; অফলাইনে থাকলে শেয়ার করা ক্লিনিকের মুছে ফেলার কাজ সিঙ্কের জন্য অপেক্ষা করবে।',
   );
   String get eraseFailed => _t(
     'Erasing did not finish. Check the lists before continuing. Nothing was reported as deleted unless this message says so.',
@@ -353,8 +373,8 @@ class AppStrings {
     'ক্লিনিক্যাল তথ্য, ওষুধ নির্বাচন এবং নির্দেশনা প্রেসক্রাইবার লিখেছেন।',
   );
   String get fixturePdfNote => _t(
-    'One or more product names were taken from synthetic demo catalog data and confirmed by the prescriber. They are not verified MedEx records.',
-    'এক বা একাধিক পণ্যের নাম কৃত্রিম ডেমো ক্যাটালগ থেকে নেওয়া এবং প্রেসক্রাইবার নিশ্চিত করেছেন। এগুলো যাচাই করা মেডেক্স রেকর্ড নয়।',
+    'One or more product names came from synthetic test data and were confirmed by the prescriber. They are not verified medicine information.',
+    'এক বা একাধিক পণ্যের নাম কৃত্রিম পরীক্ষার ডেটা থেকে নেওয়া এবং প্রেসক্রাইবার নিশ্চিত করেছেন। এগুলো যাচাই করা ওষুধের তথ্য নয়।',
   );
   String get draftBanner =>
       _t('DRAFT — not a finalized document', 'খসড়া — চূড়ান্ত নথি নয়');
@@ -369,26 +389,19 @@ class AppStrings {
     'তালিকার কার্ড সরবে। যে প্রেসক্রিপশনে এই রোগী আগে থেকে আছেন, সেগুলো আলাদাভাবে না মোছা পর্যন্ত থাকবে।',
   );
   String get searchPatients => _t('Search patients', 'রোগী খুঁজুন');
-  String get detailsUnavailable => _t(
-    'The catalog detail request failed. The listed record is shown unchanged.',
-    'ক্যাটালগের বিস্তারিত আনা যায়নি। তালিকার রেকর্ড আগের মতোই দেখানো হচ্ছে।',
-  );
   String get notVerified =>
-      _t('Not verified MedEx records', 'যাচাই করা মেডেক্স রেকর্ড নয়');
+      _t('Not verified medicine information', 'যাচাই করা ওষুধের তথ্য নয়');
   String get sourceLabel => _t('Source', 'উৎস');
   String get back => _t('Back', 'ফিরে যান');
   String get retry => _t('Retry', 'আবার চেষ্টা');
   String get startupFailed => _t(
-    'DocPad could not open local storage, so it did not start with an empty record list. Your existing data was not erased. Restart the app after the device secure store is available.',
-    'ডকপ্যাড স্থানীয় স্টোরেজ খুলতে পারেনি, তাই খালি তালিকা নিয়ে চালু হয়নি। আগের ডেটা মোছা হয়নি।',
+    '${ClinicBranding.name} could not open local storage, so it did not start with an empty record list. Your existing data was not erased. Restart the app after the device secure store is available.',
+    '${ClinicBranding.name} স্থানীয় স্টোরেজ খুলতে পারেনি, তাই খালি তালিকা নিয়ে চালু হয়নি। আগের ডেটা মোছা হয়নি।',
   );
   String characters(int count) =>
       isBangla ? '$count অক্ষর' : '$count characters';
   String page(int number, int total) =>
       isBangla ? 'পৃষ্ঠা $number / $total' : 'Page $number / $total';
-  String cachedAt(String when) =>
-      isBangla ? 'এই ডিভাইসে সংরক্ষিত: $when' : 'Stored on this device: $when';
-
   String sexLabel(String? code) {
     return switch (code) {
       'female' => sexFemale,

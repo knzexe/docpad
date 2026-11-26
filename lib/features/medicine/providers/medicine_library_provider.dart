@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -11,10 +13,20 @@ final medicineLibraryProvider =
 
 class MedicineLibraryNotifier extends AsyncNotifier<List<Medicine>> {
   @override
-  Future<List<Medicine>> build() =>
-      ref.read(medicineRepositoryProvider).getAll();
+  Future<List<Medicine>> build() {
+    ref.listen(clinicDataChangesProvider, (_, next) {
+      if (next.asData?.value.collection == 'medicines') {
+        unawaited(_reload());
+      }
+    });
+    return ref.read(medicineRepositoryProvider).getAll();
+  }
 
-  Future<void> save({
+  Future<void> _reload() async {
+    state = AsyncData(await ref.read(medicineRepositoryProvider).getAll());
+  }
+
+  Future<Medicine> save({
     String? id,
     required String brandName,
     String? genericName,
@@ -46,6 +58,7 @@ class MedicineLibraryNotifier extends AsyncNotifier<List<Medicine>> {
     );
     await ref.read(medicineRepositoryProvider).upsert(medicine);
     state = AsyncData(await ref.read(medicineRepositoryProvider).getAll());
+    return medicine;
   }
 
   Future<void> remove(String id) async {

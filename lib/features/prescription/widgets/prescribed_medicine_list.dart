@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_tokens.dart';
 
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/feedback_widgets.dart';
-import '../../medicine/models/medex_brand.dart';
+import '../../medicine/models/medicine_catalog_item.dart';
 import '../../medicine/widgets/medicine_search_panel.dart';
 import '../../settings/providers/settings_providers.dart';
 import '../models/prescribed_medicine.dart';
@@ -60,94 +61,92 @@ class _MedicineRow extends ConsumerWidget {
       if (item.strength != null) item.strength!,
       if (item.dosageForm != null) item.dosageForm!,
     ].join(' | ');
-    return Container(
-      margin: EdgeInsets.only(bottom: last ? 0 : 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(item.brandName, style: theme.textTheme.titleMedium),
-          if (catalog.isNotEmpty)
-            Text(catalog, style: theme.textTheme.bodySmall),
-          if (item.sourceKind == 'fixture')
-            Text(strings.demoTitle, style: theme.textTheme.bodySmall),
-          const SizedBox(height: 6),
-          Text('${strings.dose}: ${item.dose}'),
-          Text('${strings.frequency}: ${item.frequency}'),
-          Text('${strings.duration}: ${item.duration}'),
-          if (item.instructions.trim().isNotEmpty)
-            Text('${strings.specialInstructions}: ${item.instructions}'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 4,
-            children: [
-              IconButton(
-                tooltip: strings.moveUp,
-                onPressed: index == 0
-                    ? null
-                    : () => ref
-                          .read(editorProvider.notifier)
-                          .moveMedicine(index, -1),
-                icon: const Icon(AppIcons.arrowUp, size: 18),
-              ),
-              IconButton(
-                tooltip: strings.moveDown,
-                onPressed: last
-                    ? null
-                    : () => ref
-                          .read(editorProvider.notifier)
-                          .moveMedicine(index, 1),
-                icon: const Icon(AppIcons.arrowDown, size: 18),
-              ),
-              IconButton(
-                tooltip: strings.edit,
-                onPressed: () async {
-                  final updated = await showMedicineEntry(
-                    context,
-                    brand: MedExBrand(
-                      id: item.medicineId,
-                      brandName: item.brandName,
-                      genericName: item.genericName,
-                      strength: item.strength,
-                      dosageForm: item.dosageForm,
-                      manufacturer: item.manufacturer,
-                      sourceKind: item.sourceKind,
-                    ),
-                    existing: item,
-                  );
-                  if (updated != null) {
-                    ref.read(editorProvider.notifier).updateMedicine(updated);
-                  }
-                },
-                icon: const Icon(AppIcons.edit3, size: 18),
-              ),
-              IconButton(
-                tooltip: strings.remove,
-                onPressed: () async {
-                  final ok = await confirmDestructive(
-                    context,
-                    strings: strings,
-                    title: strings.removeMedicineTitle,
-                    body: strings.removeMedicineBody,
-                    confirmLabel: strings.remove,
-                  );
-                  if (ok) {
-                    ref.read(editorProvider.notifier).removeMedicine(item.id);
-                  }
-                },
-                icon: Icon(
-                  AppIcons.trash2,
-                  size: 18,
-                  color: theme.colorScheme.error,
+    return Card(
+      margin: EdgeInsets.only(bottom: last ? 0 : AppSpacing.sm),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item.brandName, style: theme.textTheme.titleMedium),
+            if (catalog.isNotEmpty)
+              Text(catalog, style: theme.textTheme.bodySmall),
+            if (item.sourceKind == 'fixture')
+              Text(strings.demoTitle, style: theme.textTheme.bodySmall),
+            const SizedBox(height: 6),
+            Text('${strings.dose}: ${item.dose}'),
+            Text('${strings.frequency}: ${item.frequency}'),
+            Text('${strings.duration}: ${item.duration}'),
+            if (item.instructions.trim().isNotEmpty)
+              Text('${strings.specialInstructions}: ${item.instructions}'),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 4,
+              children: [
+                IconButton(
+                  tooltip: strings.moveUp,
+                  onPressed: index == 0
+                      ? null
+                      : () => ref
+                            .read(editorProvider.notifier)
+                            .moveMedicine(index, -1),
+                  icon: const Icon(AppIcons.arrowUp, size: 18),
                 ),
-              ),
-            ],
-          ),
-        ],
+                IconButton(
+                  tooltip: strings.moveDown,
+                  onPressed: last
+                      ? null
+                      : () => ref
+                            .read(editorProvider.notifier)
+                            .moveMedicine(index, 1),
+                  icon: const Icon(AppIcons.arrowDown, size: 18),
+                ),
+                IconButton(
+                  tooltip: strings.edit,
+                  onPressed: () async {
+                    final updated = await showMedicineEntry(
+                      context,
+                      brand: MedicineCatalogItem(
+                        id: item.medicineId,
+                        brandName: item.brandName,
+                        genericName: item.genericName,
+                        strength: item.strength,
+                        dosageForm: item.dosageForm,
+                        manufacturer: item.manufacturer,
+                        sourceKind: item.sourceKind,
+                      ),
+                      existing: item,
+                    );
+                    if (updated != null) {
+                      ref.read(editorProvider.notifier).updateMedicine(updated);
+                    }
+                  },
+                  icon: const Icon(AppIcons.edit3, size: 18),
+                ),
+                IconButton(
+                  tooltip: strings.remove,
+                  onPressed: () async {
+                    final ok = await confirmDestructive(
+                      context,
+                      strings: strings,
+                      title: strings.removeMedicineTitle,
+                      body: strings.removeMedicineBody,
+                      confirmLabel: strings.remove,
+                    );
+                    if (ok) {
+                      ref.read(editorProvider.notifier).removeMedicine(item.id);
+                    }
+                  },
+                  icon: Icon(
+                    AppIcons.trash2,
+                    size: 18,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

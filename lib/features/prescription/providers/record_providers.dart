@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/repository_providers.dart';
@@ -13,6 +15,11 @@ final prescriptionListProvider =
 class PrescriptionListNotifier extends AsyncNotifier<List<Prescription>> {
   @override
   Future<List<Prescription>> build() {
+    ref.listen(clinicDataChangesProvider, (_, next) {
+      if (next.asData?.value.collection == 'prescriptions') {
+        unawaited(refresh());
+      }
+    });
     return ref.read(prescriptionRepositoryProvider).getAll();
   }
 
@@ -29,6 +36,11 @@ final patientListProvider =
 class PatientListNotifier extends AsyncNotifier<List<Patient>> {
   @override
   Future<List<Patient>> build() {
+    ref.listen(clinicDataChangesProvider, (_, next) {
+      if (next.asData?.value.collection == 'patients') {
+        unawaited(refresh());
+      }
+    });
     return ref.read(patientRepositoryProvider).getAll();
   }
 
@@ -50,6 +62,11 @@ final adviceListProvider =
 class AdviceListNotifier extends AsyncNotifier<List<AdviceTemplate>> {
   @override
   Future<List<AdviceTemplate>> build() {
+    ref.listen(clinicDataChangesProvider, (_, next) {
+      if (next.asData?.value.collection == 'advice') {
+        unawaited(refresh());
+      }
+    });
     return ref.read(adviceRepositoryProvider).getAll();
   }
 

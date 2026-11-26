@@ -14,9 +14,12 @@ class ProfileRepository {
 
   DoctorProfile read() {
     final raw = _store.read(_key);
-    if (raw == null) return DoctorProfile.empty;
+    if (raw == null) return DoctorProfile.clinicDefault;
     try {
-      return DoctorProfile.fromJson(decodeRecord(raw, 'read-profile'));
+      final profile = DoctorProfile.fromJson(
+        decodeRecord(raw, 'read-profile'),
+      );
+      return profile.hasVisibleHeader ? profile : DoctorProfile.clinicDefault;
     } catch (error) {
       AppLog.error('read-profile', error);
       throw const AppException(

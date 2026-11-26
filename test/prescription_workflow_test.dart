@@ -6,6 +6,23 @@ import 'helpers/fakes.dart';
 import 'helpers/pump_app.dart';
 
 void main() {
+  testWidgets('prescription action bars fit a narrow mobile screen', (
+    tester,
+  ) async {
+    await pumpDocPad(tester, size: const Size(320, 800));
+    await tester.tap(find.byKey(const Key('new-prescription')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byKey(const Key('open-preview')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('finalize')), findsOneWidget);
+    expect(find.byKey(const Key('export-pdf')), findsOneWidget);
+    expect(find.byKey(const Key('print-pdf')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'a doctor can document, save, reopen, and export a prescription',
     (tester) async {

@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_tokens.dart';
 
+import '../../../core/constants/breakpoints.dart';
+import '../../../core/constants/clinic_branding.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/utils/dates.dart';
 import '../../../data/repository_providers.dart';
@@ -55,7 +58,7 @@ class _PrescriptionPreviewScreenState
           ? prescription.id
           : prescription.id.substring(0, 8);
       final uri = await FilePicker.saveFile(
-        fileName: 'DocPad-$stem.pdf',
+        fileName: '${ClinicBranding.filePrefix}-$stem.pdf',
         bytes: bytes,
         mimeType: 'application/pdf',
       );
@@ -134,6 +137,9 @@ class _PrescriptionPreviewScreenState
   Widget build(BuildContext context) {
     final strings = ref.watch(stringsProvider);
     final editor = ref.watch(editorProvider);
+    final compactActions = Breakpoints.usesCompactActions(
+      MediaQuery.sizeOf(context).width,
+    );
     final prescription = editor.prescription?.id == widget.prescriptionId
         ? editor.prescription
         : null;
@@ -150,21 +156,47 @@ class _PrescriptionPreviewScreenState
         title: Text(strings.preview),
         actions: [
           if (shown != null) ...[
-            TextButton(
-              key: const Key('finalize'),
-              onPressed: _busy == null ? _finalize : null,
-              child: Text(strings.finalize),
-            ),
-            TextButton(
-              key: const Key('export-pdf'),
-              onPressed: _busy == null ? _export : null,
-              child: Text(_busy == 'pdf' ? strings.saving : strings.exportPdf),
-            ),
-            TextButton(
-              key: const Key('print-pdf'),
-              onPressed: _busy == null ? _print : null,
-              child: Text(_busy == 'print' ? strings.saving : strings.print),
-            ),
+            if (compactActions)
+              IconButton(
+                key: const Key('finalize'),
+                tooltip: strings.finalize,
+                onPressed: _busy == null ? _finalize : null,
+                icon: const Icon(Icons.task_alt_outlined),
+              )
+            else
+              TextButton(
+                key: const Key('finalize'),
+                onPressed: _busy == null ? _finalize : null,
+                child: Text(strings.finalize),
+              ),
+            if (compactActions)
+              IconButton(
+                key: const Key('export-pdf'),
+                tooltip: _busy == 'pdf' ? strings.saving : strings.exportPdf,
+                onPressed: _busy == null ? _export : null,
+                icon: const Icon(Icons.file_download_outlined),
+              )
+            else
+              TextButton(
+                key: const Key('export-pdf'),
+                onPressed: _busy == null ? _export : null,
+                child: Text(
+                  _busy == 'pdf' ? strings.saving : strings.exportPdf,
+                ),
+              ),
+            if (compactActions)
+              IconButton(
+                key: const Key('print-pdf'),
+                tooltip: _busy == 'print' ? strings.saving : strings.print,
+                onPressed: _busy == null ? _print : null,
+                icon: const Icon(Icons.print_outlined),
+              )
+            else
+              TextButton(
+                key: const Key('print-pdf'),
+                onPressed: _busy == null ? _print : null,
+                child: Text(_busy == 'print' ? strings.saving : strings.print),
+              ),
           ],
         ],
       ),
@@ -187,16 +219,16 @@ class _Paper extends ConsumerWidget {
     final doctor = rx.header ?? const DoctorProfile();
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: AppSpacing.page,
       children: [
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760),
             child: Container(
-              padding: const EdgeInsets.all(28),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadii.compact),
                 border: Border.all(color: theme.dividerColor),
               ),
               child: Column(

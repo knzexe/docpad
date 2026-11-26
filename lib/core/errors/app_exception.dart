@@ -7,7 +7,3 @@ class AppException implements Exception {
   @override
   String toString() => message;
 }
-
-class CancelledRequest implements Exception {
-  const CancelledRequest();
-}

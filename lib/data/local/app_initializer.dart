@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/errors/app_exception.dart';
 import '../../core/utils/app_log.dart';
+import '../cloud/clinic_sync_service.dart';
+import '../cloud/cloud_synced_key_value_store.dart';
 import '../../features/advice/repositories/advice_repository.dart';
-import '../../features/medicine/repositories/catalog_cache_repository.dart';
 import '../../features/medicine/repositories/medicine_repository.dart';
 import '../../features/patients/repositories/patient_repository.dart';
 import '../../features/prescription/repositories/prescription_repository.dart';
@@ -18,7 +20,10 @@ import '../repository_providers.dart';
 import 'key_value_store.dart';
 
 class AppInitializer {
-  static Future<List<Override>> create() async {
+  static Future<List<Override>> create({
+    SupabaseClient? supabaseClient,
+    String? cloudConfigurationError,
+  }) async {
     final preferences = await SharedPreferences.getInstance();
     final key = await _loadKey();
     await Hive.initFlutter();
@@ -29,27 +34,48 @@ class AppInitializer {
       return HiveBoxStore(box);
     }
 
+    final stores = {
+      'profile': await open('profile'),
+      'prescriptions': await open('prescriptions'),
+      'patients': await open('patients'),
+      'advice': await open('advice'),
+      'medicines': await open('medicines'),
+    };
+    final syncService = ClinicSyncService(
+      client: supabaseClient,
+      stores: stores,
+      outbox: await open('sync_outbox'),
+      configurationError: cloudConfigurationError,
+    );
+    await syncService.initialize();
+
+    KeyValueStore synced(String collection) {
+      return CloudSyncedKeyValueStore(
+        local: stores[collection]!,
+        syncService: syncService,
+        collection: collection,
+      );
+    }
+
     return [
+      clinicSyncServiceProvider.overrideWithValue(syncService),
       settingsRepositoryProvider.overrideWithValue(
         PreferencesSettingsRepository(preferences),
       ),
       profileRepositoryProvider.overrideWithValue(
-        ProfileRepository(await open('profile')),
+        ProfileRepository(synced('profile')),
       ),
       prescriptionRepositoryProvider.overrideWithValue(
-        PrescriptionRepository(await open('prescriptions')),
+        PrescriptionRepository(synced('prescriptions')),
       ),
       patientRepositoryProvider.overrideWithValue(
-        PatientRepository(await open('patients')),
+        PatientRepository(synced('patients')),
       ),
       adviceRepositoryProvider.overrideWithValue(
-        AdviceRepository(await open('advice')),
-      ),
-      catalogCacheRepositoryProvider.overrideWithValue(
-        CatalogCacheRepository(await open('catalog_cache')),
+        AdviceRepository(synced('advice')),
       ),
       medicineRepositoryProvider.overrideWithValue(
-        MedicineRepository(await open('medicines')),
+        MedicineRepository(synced('medicines')),
       ),
     ];
   }

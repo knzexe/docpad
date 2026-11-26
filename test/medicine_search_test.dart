@@ -1,9 +1,6 @@
 import 'dart:async';
 
 import 'package:docpad/core/errors/app_exception.dart';
-import 'package:docpad/data/local/key_value_store.dart';
-import 'package:docpad/features/medicine/models/catalog_page.dart';
-import 'package:docpad/features/medicine/repositories/catalog_cache_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -24,7 +21,6 @@ void main() {
       await pumpDocPad(tester, catalog: catalog);
       await openEditor(tester);
 
-      expect(find.textContaining('DEMO DATA'), findsWidgets);
       await tester.enterText(find.byKey(const Key('medicine-search')), 'fix');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
@@ -36,7 +32,7 @@ void main() {
 
       expect(find.text('FixtureBrand'), findsOneWidget);
       expect(
-        find.textContaining('not a verified MedEx database'),
+        find.textContaining('not verified medicine information'),
         findsWidgets,
       );
       expect(find.textContaining('Source: fixture'), findsOneWidget);
@@ -51,17 +47,52 @@ void main() {
     await flushSearch(tester);
 
     expect(catalog.searchCalls, 1);
+    expect(find.text('No medicines matched that search.'), findsOneWidget);
+  });
+
+  testWidgets('a manually entered medicine is saved and prescribed', (
+    tester,
+  ) async {
+    final harness = await pumpDocPad(tester, size: const Size(320, 800));
+    await openEditor(tester);
+
+    await reveal(tester, find.byKey(const Key('add-medicine-manually')));
+    await tester.tap(find.byKey(const Key('add-medicine-manually')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('library-medicine-brand')),
+      'Custom medicine',
+    );
+    await tester.tap(find.text('Save medicine'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('dose-field')), '1 tablet');
+    await tester.enterText(
+      find.byKey(const Key('frequency-field')),
+      'Twice daily',
+    );
+    await tester.enterText(find.byKey(const Key('duration-field')), '5 days');
+    await tester.ensureVisible(find.byKey(const Key('add-medicine-confirm')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-medicine-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('dose-field')), findsNothing);
+    expect(find.text('Custom medicine'), findsOneWidget);
+    expect(find.textContaining('Dose: 1 tablet'), findsOneWidget);
     expect(
-      find.text('No catalog records matched that search.'),
-      findsOneWidget,
+      (await harness.medicines.getAll()).single.brandName,
+      'Custom medicine',
     );
   });
 
-  testWidgets('a failed search keeps entered patient text', (tester) async {
+  testWidgets('a failed local search keeps entered patient text', (
+    tester,
+  ) async {
     final catalog = FakeCatalog(
       error: const AppException(
-        'The catalog request did not complete. Your prescription text is still on this screen.',
-        code: 'network',
+        'The local medicine library could not be read. Your prescription text is still on this screen.',
+        code: 'local_storage',
       ),
     );
     await pumpDocPad(tester, catalog: catalog);
@@ -79,40 +110,5 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Amina Rahman'), findsOneWidget);
-  });
-
-  testWidgets('a failed search shows a cached fixture with its age', (
-    tester,
-  ) async {
-    final cache = CatalogCacheRepository(MemoryStore());
-    await cache.write(
-      CachedMedicineSearch(
-        query: 'fix',
-        page: 1,
-        items: const [FakeCatalog.fixtureBrand],
-        hasNext: false,
-        source: const CatalogSource(
-          kind: 'fixture',
-          providerName: 'Synthetic Development Fixtures',
-        ),
-        cachedAt: DateTime.now().subtract(const Duration(minutes: 12)),
-      ),
-    );
-    await pumpDocPad(
-      tester,
-      catalog: FakeCatalog(
-        error: const AppException('offline', code: 'offline'),
-      ),
-      cache: cache,
-    );
-    await openEditor(tester);
-    await tester.enterText(find.byKey(const Key('medicine-search')), 'fix');
-    await flushSearch(tester);
-
-    expect(find.text('FixtureBrand'), findsOneWidget);
-    expect(find.textContaining('not a current catalog'), findsOneWidget);
-    expect(find.textContaining('12 min ago'), findsOneWidget);
-    expect(find.textContaining('Not verified MedEx records'), findsOneWidget);
-    expect(find.textContaining('DEMO DATA'), findsWidgets);
   });
 }

@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/breakpoints.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/responsive.dart';
+import '../../settings/providers/settings_providers.dart';
 import '../models/medicine.dart';
 import '../providers/medicine_library_provider.dart';
 
@@ -12,41 +16,57 @@ class MedicineLibraryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
     final medicines = ref.watch(medicineLibraryProvider);
+    final compactActions = Breakpoints.usesCompactActions(
+      MediaQuery.sizeOf(context).width,
+    );
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Medicine Library'),
+        title: const Text(
+          'My Medicine Library',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: FilledButton.icon(
-              key: const Key('add-medicine'),
-              onPressed: () => showMedicineLibraryForm(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Add new medicine'),
-            ),
+            padding: EdgeInsets.only(right: compactActions ? 8 : 16),
+            child: compactActions
+                ? IconButton(
+                    key: const Key('add-medicine'),
+                    tooltip: strings.addNewMedicine,
+                    onPressed: () => showMedicineLibraryForm(context),
+                    icon: const Icon(Icons.add),
+                  )
+                : FilledButton.icon(
+                    key: const Key('add-medicine'),
+                    onPressed: () => showMedicineLibraryForm(context),
+                    icon: const Icon(Icons.add),
+                    label: Text(strings.addNewMedicine),
+                  ),
           ),
         ],
       ),
       body: medicines.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Could not load medicines: $error')),
+        error: (error, _) =>
+            Center(child: Text('Could not load medicines: $error')),
         data: (items) => _MedicineList(items: items),
       ),
     );
   }
 }
 
-class _MedicineList extends StatefulWidget {
+class _MedicineList extends ConsumerStatefulWidget {
   const _MedicineList({required this.items});
 
   final List<Medicine> items;
 
   @override
-  State<_MedicineList> createState() => _MedicineListState();
+  ConsumerState<_MedicineList> createState() => _MedicineListState();
 }
 
-class _MedicineListState extends State<_MedicineList> {
+class _MedicineListState extends ConsumerState<_MedicineList> {
   String _query = '';
 
   @override
@@ -57,27 +77,29 @@ class _MedicineListState extends State<_MedicineList> {
           item.brandName.toLowerCase().contains(query) ||
           (item.genericName?.toLowerCase().contains(query) ?? false);
     }).toList();
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        TextField(
-          key: const Key('medicine-library-search'),
-          onChanged: (value) => setState(() => _query = value),
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search),
-            hintText: 'Search by brand or generic name',
+    return AppPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            key: const Key('medicine-library-search'),
+            onChanged: (value) => setState(() => _query = value),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Search by brand or generic name',
+            ),
           ),
-        ),
-        const SizedBox(height: 18),
-        if (items.isEmpty)
-          const EmptyState(
-            icon: Icons.medication_outlined,
-            title: 'No medicines found',
-            body: 'Add medicines manually to build your private library.',
-          )
-        else
-          for (final item in items) _MedicineCard(item: item),
-      ],
+          const SizedBox(height: AppSpacing.md),
+          if (items.isEmpty)
+            const EmptyState(
+              icon: Icons.medication_outlined,
+              title: 'No medicines found',
+              body: 'Add medicines manually to build your private library.',
+            )
+          else
+            for (final item in items) _MedicineCard(item: item),
+        ],
+      ),
     );
   }
 }
@@ -89,6 +111,9 @@ class _MedicineCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final compactActions = Breakpoints.usesCompactActions(
+      MediaQuery.sizeOf(context).width,
+    );
     final details = [
       if (item.genericName != null) item.genericName!,
       if (item.strength != null) item.strength!,
@@ -99,31 +124,61 @@ class _MedicineCard extends ConsumerWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         title: Text(item.brandName),
-        subtitle: Text([
-          if (details.isNotEmpty) details,
-          if (item.manufacturer != null) item.manufacturer!,
-          if (item.category != null) item.category!,
-        ].join('\n')),
-        isThreeLine: details.isNotEmpty,
-        trailing: Wrap(
-          children: [
-            IconButton(
-              tooltip: 'Add to prescription',
-              onPressed: () => context.go('/prescription/new'),
-              icon: const Icon(Icons.add_circle_outline),
-            ),
-            IconButton(
-              tooltip: 'Edit',
-              onPressed: () => showMedicineLibraryForm(context, initial: item),
-              icon: const Icon(AppIcons.edit3),
-            ),
-            IconButton(
-              tooltip: 'Delete',
-              onPressed: () => _delete(context, ref),
-              icon: const Icon(AppIcons.trash2),
-            ),
-          ],
+        subtitle: Text(
+          [
+            if (details.isNotEmpty) details,
+            if (item.manufacturer != null) item.manufacturer!,
+            if (item.category != null) item.category!,
+          ].join('\n'),
         ),
+        isThreeLine: details.isNotEmpty,
+        trailing: compactActions
+            ? PopupMenuButton<_MedicineAction>(
+                onSelected: (action) {
+                  switch (action) {
+                    case _MedicineAction.add:
+                      context.go('/prescription/new');
+                    case _MedicineAction.edit:
+                      showMedicineLibraryForm(context, initial: item);
+                    case _MedicineAction.delete:
+                      _delete(context, ref);
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: _MedicineAction.add,
+                    child: Text('Add to prescription'),
+                  ),
+                  PopupMenuItem(
+                    value: _MedicineAction.edit,
+                    child: Text('Edit'),
+                  ),
+                  PopupMenuItem(
+                    value: _MedicineAction.delete,
+                    child: Text('Delete'),
+                  ),
+                ],
+              )
+            : Wrap(
+                children: [
+                  IconButton(
+                    tooltip: 'Add to prescription',
+                    onPressed: () => context.go('/prescription/new'),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                  IconButton(
+                    tooltip: 'Edit',
+                    onPressed: () =>
+                        showMedicineLibraryForm(context, initial: item),
+                    icon: const Icon(AppIcons.edit3),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete',
+                    onPressed: () => _delete(context, ref),
+                    icon: const Icon(AppIcons.trash2),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -135,8 +190,14 @@ class _MedicineCard extends ConsumerWidget {
         title: const Text('Delete medicine?'),
         content: Text('Remove ${item.brandName} from your library?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -146,11 +207,13 @@ class _MedicineCard extends ConsumerWidget {
   }
 }
 
-Future<void> showMedicineLibraryForm(
+enum _MedicineAction { add, edit, delete }
+
+Future<Medicine?> showMedicineLibraryForm(
   BuildContext context, {
   Medicine? initial,
 }) async {
-  await showDialog<void>(
+  return showDialog<Medicine>(
     context: context,
     builder: (_) => _MedicineForm(initial: initial),
   );
@@ -190,7 +253,15 @@ class _MedicineFormState extends ConsumerState<_MedicineForm> {
 
   @override
   void dispose() {
-    for (final controller in [_brand, _generic, _strength, _form, _manufacturer, _category, _notes]) {
+    for (final controller in [
+      _brand,
+      _generic,
+      _strength,
+      _form,
+      _manufacturer,
+      _category,
+      _notes,
+    ]) {
       controller.dispose();
     }
     super.dispose();
@@ -198,35 +269,65 @@ class _MedicineFormState extends ConsumerState<_MedicineForm> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = ref.watch(stringsProvider);
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Add new medicine' : 'Edit medicine'),
-      content: SizedBox(
-        width: 520,
+      title: Text(
+        widget.initial == null ? strings.addNewMedicine : strings.editMedicine,
+      ),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              AppTextField(controller: _brand, label: 'Brand name', requiredField: true),
+              AppTextField(
+                fieldKey: const Key('library-medicine-brand'),
+                controller: _brand,
+                label: strings.brandName,
+                requiredField: true,
+              ),
               const SizedBox(height: 12),
-              AppTextField(controller: _generic, label: 'Generic name'),
+              AppTextField(controller: _generic, label: strings.genericName),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: AppTextField(controller: _strength, label: 'Strength')),
+                  Expanded(
+                    child: AppTextField(
+                      controller: _strength,
+                      label: strings.strength,
+                    ),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: AppTextField(controller: _form, label: 'Dosage form')),
+                  Expanded(
+                    child: AppTextField(
+                      controller: _form,
+                      label: strings.dosageForm,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
-              AppTextField(controller: _manufacturer, label: 'Manufacturer'),
+              AppTextField(
+                controller: _manufacturer,
+                label: strings.manufacturer,
+              ),
               const SizedBox(height: 12),
-              AppTextField(controller: _category, label: 'Category'),
+              AppTextField(controller: _category, label: strings.category),
               const SizedBox(height: 12),
-              AppTextField(controller: _notes, label: 'Notes', maxLines: 3),
+              AppTextField(
+                controller: _notes,
+                label: strings.notes,
+                maxLines: 3,
+              ),
               if (_error != null) ...[
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -234,25 +335,30 @@ class _MedicineFormState extends ConsumerState<_MedicineForm> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _save, child: const Text('Save medicine')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(strings.cancel),
+        ),
+        FilledButton(onPressed: _save, child: Text(strings.saveMedicine)),
       ],
     );
   }
 
   Future<void> _save() async {
     try {
-      await ref.read(medicineLibraryProvider.notifier).save(
-        id: widget.initial?.id,
-        brandName: _brand.text,
-        genericName: _generic.text,
-        strength: _strength.text,
-        dosageForm: _form.text,
-        manufacturer: _manufacturer.text,
-        category: _category.text,
-        notes: _notes.text,
-      );
-      if (mounted) Navigator.pop(context);
+      final saved = await ref
+          .read(medicineLibraryProvider.notifier)
+          .save(
+            id: widget.initial?.id,
+            brandName: _brand.text,
+            genericName: _generic.text,
+            strength: _strength.text,
+            dosageForm: _form.text,
+            manufacturer: _manufacturer.text,
+            category: _category.text,
+            notes: _notes.text,
+          );
+      if (mounted) Navigator.pop(context, saved);
     } on FormatException catch (error) {
       setState(() => _error = error.message);
     }

@@ -3,7 +3,7 @@ import 'package:docpad/data/local/key_value_store.dart';
 import 'package:docpad/data/repository_providers.dart';
 import 'package:docpad/features/advice/repositories/advice_repository.dart';
 import 'package:docpad/features/medicine/providers/medicine_providers.dart';
-import 'package:docpad/features/medicine/repositories/catalog_cache_repository.dart';
+import 'package:docpad/features/medicine/repositories/medicine_repository.dart';
 import 'package:docpad/features/patients/repositories/patient_repository.dart';
 import 'package:docpad/features/prescription/repositories/prescription_repository.dart';
 import 'package:docpad/features/settings/repositories/profile_repository.dart';
@@ -21,22 +21,21 @@ class TestHarness {
     required this.prescriptions,
     required this.patients,
     required this.advice,
-    required this.cache,
     required this.catalog,
+    required this.medicines,
   });
 
   final PrescriptionRepository prescriptions;
   final PatientRepository patients;
   final AdviceRepository advice;
-  final CatalogCacheRepository cache;
   final FakeCatalog catalog;
+  final MedicineRepository medicines;
 }
 
 Future<TestHarness> pumpDocPad(
   WidgetTester tester, {
   Size size = const Size(1440, 900),
   FakeCatalog? catalog,
-  CatalogCacheRepository? cache,
 }) async {
   await initializeDateFormatting('en');
   await initializeDateFormatting('bn');
@@ -49,8 +48,8 @@ Future<TestHarness> pumpDocPad(
     prescriptions: PrescriptionRepository(MemoryStore()),
     patients: PatientRepository(MemoryStore()),
     advice: AdviceRepository(MemoryStore()),
-    cache: cache ?? CatalogCacheRepository(MemoryStore()),
     catalog: catalog ?? FakeCatalog(),
+    medicines: MedicineRepository(MemoryStore()),
   );
 
   await tester.pumpWidget(
@@ -65,8 +64,8 @@ Future<TestHarness> pumpDocPad(
         prescriptionRepositoryProvider.overrideWithValue(harness.prescriptions),
         patientRepositoryProvider.overrideWithValue(harness.patients),
         adviceRepositoryProvider.overrideWithValue(harness.advice),
-        catalogCacheRepositoryProvider.overrideWithValue(harness.cache),
-        medicineApiProvider.overrideWithValue(harness.catalog),
+        medicineRepositoryProvider.overrideWithValue(harness.medicines),
+        medicineCatalogProvider.overrideWithValue(harness.catalog),
         onlineProvider.overrideWith((ref) => Stream<bool>.value(true)),
       ],
       child: const DocPadApp(),

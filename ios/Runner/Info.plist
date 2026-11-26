@@ -7,9 +7,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>DocPad</string>
+	<string>Raifa Medicine &amp; SS Health Care</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>DocPad uses a photo only when you choose a clinic logo for the prescription header.</string>
+	<string>Raifa Medicine &amp; SS Health Care uses a photo only when you choose a clinic logo for the prescription header.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -24,7 +24,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>docpad</string>
+	<string>Raifa Medicine</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

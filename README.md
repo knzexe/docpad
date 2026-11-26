@@ -1,18 +1,19 @@
-# DocPad
+# Raifa Medicine & SS Health Care
 
-DocPad is a doctor-facing prescription documentation app for Windows, macOS, Linux, Android, and iOS. It records what the doctor types: patient details, clinical notes, manually entered medicine instructions, and advice. It does not diagnose, choose medicines, calculate doses, or generate treatment decisions.
+This clinic app provides prescription documentation for Windows, macOS, Linux, Android, and iOS. It records what the doctor types: patient details, clinical notes, manually entered medicine instructions, and advice. It does not diagnose, choose medicines, calculate doses, or generate treatment decisions.
+
+The clinic profile, doctor details, logo, address, and phone number are prefilled from the supplied clinic artwork and can be edited in Settings. Prescription PDFs use the clinic's logo and colors.
 
 Before any real clinical use, the deployment needs clinical, privacy, security, and regulatory review. Local storage on one device is not a backed-up medical record system.
 
 ## My Medicine Library
 
-Medicine records are entered and managed by the doctor in DocPad's encrypted
+Medicine records are entered and managed by the doctor in the app's encrypted
 local Hive database. Search matches the saved brand and generic names and works
-without a network connection. DocPad does not call MedEx, DGHS, or any other
-external medicine service, and it never generates clinical information or dose
-instructions.
+without a network connection. The app makes no external medicine-service
+requests and never generates clinical information or dose instructions.
 
-## Run DocPad
+## Run the app
 
 Flutter 3.47 or newer (Dart 3.13).
 
@@ -20,6 +21,82 @@ Flutter 3.47 or newer (Dart 3.13).
 flutter pub get
 flutter run
 ```
+
+## Supabase clinic sync
+
+The app remains usable offline with its encrypted Hive database. When configured
+and signed in, the clinic profile, prescriptions, patients, advice templates,
+and medicine library sync through Supabase Realtime. Changes made offline are
+queued locally and uploaded when a clinic connection is available. App language
+preferences remain device-local.
+
+Before enabling cloud sync:
+
+1. Create a Supabase project and run
+   `supabase/migrations/20261126154000_clinic_realtime.sql` in its SQL Editor.
+2. Read the project URL and **publishable** key from the Supabase dashboard.
+   Never put a database password or service-role/secret key in the app.
+3. Configure the app with:
+
+   ```bash
+   flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLIC_KEY
+   ```
+
+   Use the same `--dart-define` values when producing a Windows or mobile
+   release. Builds without both values use local storage only.
+4. Create an account in Settings. In the Supabase SQL Editor, create the clinic
+   and link the first account (replace the values with your clinic name and
+   account email):
+
+   ```sql
+   insert into public.clinics (name) values ('Clinic name') returning id;
+
+   insert into public.clinic_members (user_id, clinic_id, role)
+   select id, 'CLINIC_UUID'::uuid, 'admin'
+   from auth.users
+   where email = 'admin@example.com';
+   ```
+
+   Add further approved accounts to `clinic_members` as `member`. The app
+   intentionally cannot grant clinic membership itself. Each account can be
+   linked to one clinic per device.
+
+The migration enables Row Level Security and grants record access only to
+authenticated clinic members. It also enables Realtime for `app_records`.
+When a device first joins a clinic, its existing local records are uploaded to
+that clinic; all clinic members can access them. Signing out keeps local data
+and any queued changes on the device. “Erase clinical data” removes shared
+records on every device when connected, or queues those deletions while
+offline or signed out. A queued deletion is uploaded after signing back in to
+the same clinic. Supabase authentication sessions are stored using the
+platform's secure storage.
+
+Supabase configuration is not, by itself, a guarantee of healthcare privacy or
+regulatory compliance. Review data residency, retention, access, backups,
+encryption, applicable agreements, and local healthcare requirements before
+using real patient records.
+
+## App icons
+
+Launcher icons for Android, iOS, Windows, macOS, and web are generated from
+`assets/images/raifa_medicine_logo.png`. After replacing that source image, run:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+## Windows installer
+
+Install Inno Setup 6, then build the Windows release and installer:
+
+```bash
+flutter build windows --release
+iscc windows/installer/docpad.iss
+```
+
+The setup executable is written to `build/windows/installer`. It installs
+per-user, creates a Start menu shortcut, and offers an optional desktop
+shortcut. The installer is not code-signed.
 
 ## What you can do
 
@@ -36,11 +113,12 @@ flutter run
 
 ## Data on the device
 
-Prescriptions, patients, advice templates, medicines, and the doctor profile are JSON in encrypted Hive boxes. The AES key is created once and kept in the platform secure store (`docpad.hive_key`). If that store cannot be opened, DocPad stops on a startup screen and does not open a new empty database or replace the key.
+Prescriptions, patients, advice templates, medicines, and the doctor profile are JSON in encrypted Hive boxes. The AES key is created once and kept in the platform secure store (`docpad.hive_key`). The stable key name remains unchanged. If that store cannot be opened, the app stops on a startup screen and does not open a new empty database or replace the key.
 
-Settings such as theme and language use SharedPreferences.
+App preferences use SharedPreferences. The app uses a fixed white/light
+interface; appearance is not controlled by the device theme.
 
-Erase local clinical data from Settings by typing `DELETE`. That removes prescriptions, patients, advice, medicines, and the profile. Theme and language stay.
+Erase local clinical data from Settings by typing `DELETE`. That removes prescriptions, patients, advice, and medicines; custom clinic details reset to the supplied defaults. The language preference stays.
 
 The app does not log patient names, phone numbers, or clinical notes. PDF file names use the prescription id, not the patient name.
 
@@ -48,7 +126,7 @@ The app does not log patient names, phone numbers, or clinical notes. PDF file n
 
 The interface uses bundled Inter, with Noto Sans and Noto Sans Bengali as fallbacks, so drafts and PDFs work offline. PDF text uses the Noto fonts so English and Bangla can share a page. The interface language is English or Bangla, chosen in Settings.
 
-Icons use the Lucide font shipped with the `lucide_icons` package. The package’s icon class subclasses `IconData`, which current Flutter marks final, so DocPad constructs `IconData` directly and does not import that class.
+Icons use the Lucide font shipped with the `lucide_icons` package. The package’s icon class subclasses `IconData`, which current Flutter marks final, so the app constructs `IconData` directly and does not import that class.
 
 ## Tests
 
@@ -57,7 +135,7 @@ flutter analyze
 flutter test
 ```
 
-`flutter test` covers model serialization, catalog response parsing, editor state, PDF bytes, and the widget workflow. Tests use an in-memory catalog. They do not call a live medicine API.
+`flutter test` covers model serialization, local medicine-library search, editor state, PDF bytes, and the widget workflow. Tests use in-memory storage and do not make network requests.
 
 The same draft flow is also in `integration_test/prescription_flow_test.dart`:
 
@@ -67,9 +145,10 @@ flutter test -d windows integration_test
 
 ## Layout
 
-- Desktop (1100px and wider): extended sidebar, two-column prescription editor.
-- Tablet: collapsed rail.
-- Phone (under 720px): bottom navigation and a single scrolling editor.
+- Phone (under 720px): bottom navigation and a single-column prescription editor.
+- Tablet (720px to under 1100px): compact navigation rail and compact action buttons.
+- Desktop (1100px and wider): extended navigation rail.
+- The prescription editor switches to two columns when its available content width reaches 900px; otherwise it stays in one column.
 
 ## Limitations
 

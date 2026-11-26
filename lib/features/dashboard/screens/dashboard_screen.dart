@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_tokens.dart';
 
 import '../../../core/constants/breakpoints.dart';
+import '../../../core/constants/clinic_branding.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/feedback_widgets.dart';
@@ -24,162 +26,230 @@ class DashboardScreen extends ConsumerWidget {
     final prescriptions = ref.watch(prescriptionListProvider);
     final patients = ref.watch(patientListProvider);
     final language = strings.languageCode;
+    final compactLayout = Breakpoints.usesCompactActions(
+      MediaQuery.sizeOf(context).width,
+    );
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-      children: [
-        PageWidth(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                profile.name.trim().isEmpty
-                    ? strings.appName
-                    : profile.name.trim(),
-                style: Theme.of(context).textTheme.headlineMedium,
+    return AppPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Card(
+            child: Padding(
+              padding: EdgeInsets.all(
+                compactLayout ? AppSpacing.sm : AppSpacing.lg,
               ),
-              const SizedBox(height: 4),
-              Text(
-                formatDate(DateTime.now(), languageCode: language),
-                style: Theme.of(context).textTheme.bodySmall,
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadii.control),
+                    child: Image.asset(
+                      ClinicBranding.logoAsset,
+                      width: compactLayout ? 44 : 56,
+                      height: compactLayout ? 44 : 56,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        AppIcons.stethoscope,
+                        size: compactLayout ? 40 : 48,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: compactLayout ? 10 : 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.clinicName.trim().isEmpty
+                              ? ClinicBranding.name
+                              : profile.clinicName.trim(),
+                          maxLines: compactLayout ? 2 : null,
+                          overflow: compactLayout
+                              ? TextOverflow.ellipsis
+                              : null,
+                          style: compactLayout
+                              ? Theme.of(context).textTheme.titleMedium
+                              : Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          ClinicBranding.tagline,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          profile.name,
+                          maxLines: compactLayout ? 1 : null,
+                          overflow: compactLayout
+                              ? TextOverflow.ellipsis
+                              : null,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        if (!compactLayout &&
+                            profile.designation.trim().isNotEmpty)
+                          Text(
+                            profile.designation,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        if (!compactLayout &&
+                            profile.clinicAddress.trim().isNotEmpty)
+                          Text(
+                            '${profile.clinicAddress}  •  ${profile.contact}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatDate(DateTime.now(), languageCode: language),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              _Disclaimer(text: strings.disclaimer),
-              const SizedBox(height: 16),
-              prescriptions.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => _ErrorRetry(
-                  message: strings.couldNotRead,
-                  label: strings.retry,
-                  onRetry: () =>
-                      ref.read(prescriptionListProvider.notifier).refresh(),
-                ),
-                data: (items) {
-                  if (items.isEmpty) {
-                    return EmptyState(
-                      icon: AppIcons.fileText,
-                      title: strings.emptyTitle,
-                      body: strings.emptyBody,
-                      action: FilledButton.icon(
+            ),
+          ),
+          const SizedBox(height: 16),
+          _Disclaimer(text: strings.disclaimer),
+          const SizedBox(height: 16),
+          prescriptions.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, _) => _ErrorRetry(
+              message: strings.couldNotRead,
+              label: strings.retry,
+              onRetry: () =>
+                  ref.read(prescriptionListProvider.notifier).refresh(),
+            ),
+            data: (items) {
+              if (items.isEmpty) {
+                return EmptyState(
+                  icon: AppIcons.fileText,
+                  title: strings.emptyTitle,
+                  body: strings.emptyBody,
+                  compact: compactLayout,
+                  action: FilledButton.icon(
+                    key: const Key('new-prescription'),
+                    onPressed: () => _start(ref, context),
+                    icon: const Icon(AppIcons.plus),
+                    label: Text(strings.createFirst),
+                  ),
+                );
+              }
+              final drafts = items
+                  .where((item) => item.isDraft)
+                  .take(5)
+                  .toList();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FilledButton.icon(
                         key: const Key('new-prescription'),
                         onPressed: () => _start(ref, context),
                         icon: const Icon(AppIcons.plus),
-                        label: Text(strings.createFirst),
+                        label: Text(strings.newPrescription),
                       ),
-                    );
-                  }
-                  final drafts = items
-                      .where((item) => item.isDraft)
-                      .take(5)
-                      .toList();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          FilledButton.icon(
-                            key: const Key('new-prescription'),
-                            onPressed: () => _start(ref, context),
-                            icon: const Icon(AppIcons.plus),
-                            label: Text(strings.newPrescription),
-                          ),
-                          OutlinedButton(
-                            onPressed: () => context.go('/advice'),
-                            child: Text(strings.adviceLibrary),
-                          ),
-                          OutlinedButton(
-                            onPressed: () => context.go('/settings'),
-                            child: Text(strings.settings),
-                          ),
-                        ],
+                      OutlinedButton(
+                        onPressed: () => context.go('/advice'),
+                        child: Text(strings.adviceLibrary),
                       ),
-                      const SizedBox(height: 22),
-                      Text(
-                        strings.recentPrescriptions,
-                        style: Theme.of(context).textTheme.titleLarge,
+                      OutlinedButton(
+                        onPressed: () => context.go('/settings'),
+                        child: Text(strings.settings),
                       ),
-                      const SizedBox(height: 10),
-                      for (final item in items.take(6))
-                        _PrescriptionTile(
-                          itemId: item.id,
-                          name: item.patient.name,
-                          date: item.patient.prescriptionDate,
-                          draft: item.isDraft,
-                        ),
-                      const SizedBox(height: 22),
-                      Text(
-                        strings.drafts,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 10),
-                      if (drafts.isEmpty)
-                        Text(
-                          strings.noDrafts,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        )
-                      else
-                        for (final item in drafts)
-                          _PrescriptionTile(
-                            itemId: item.id,
-                            name: item.patient.name,
-                            date: item.patient.prescriptionDate,
-                            draft: true,
-                          ),
                     ],
-                  );
-                },
-              ),
-              const SizedBox(height: 22),
-              Text(
-                strings.recentPatients,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 10),
-              patients.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, _) => Text(strings.couldNotRead),
-                data: (items) {
-                  if (items.isEmpty) {
-                    return Text(
-                      strings.noPatients,
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    strings.recentPrescriptions,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  for (final item in items.take(6))
+                    _PrescriptionTile(
+                      itemId: item.id,
+                      name: item.patient.name,
+                      date: item.patient.prescriptionDate,
+                      draft: item.isDraft,
+                    ),
+                  const SizedBox(height: 22),
+                  Text(
+                    strings.drafts,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  if (drafts.isEmpty)
+                    Text(
+                      strings.noDrafts,
                       style: Theme.of(context).textTheme.bodySmall,
-                    );
-                  }
-                  return Column(
-                    children: [
-                      for (final patient in items.take(5))
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            patient.name.trim().isEmpty
-                                ? strings.notRecorded
-                                : patient.name,
-                          ),
-                          subtitle: Text(
-                            formatDate(
-                              patient.prescriptionDate,
-                              languageCode: language,
-                            ),
-                          ),
-                          onTap: () => context.go('/patients'),
-                        ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: () => context.go('/patients'),
-                          child: Text(strings.seeAll),
+                    )
+                  else
+                    for (final item in drafts)
+                      _PrescriptionTile(
+                        itemId: item.id,
+                        name: item.patient.name,
+                        date: item.patient.prescriptionDate,
+                        draft: true,
+                      ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 22),
+          Text(
+            strings.recentPatients,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 10),
+          patients.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => Text(strings.couldNotRead),
+            data: (items) {
+              if (items.isEmpty) {
+                return Text(
+                  strings.noPatients,
+                  style: Theme.of(context).textTheme.bodySmall,
+                );
+              }
+              return Column(
+                children: [
+                  for (final patient in items.take(5))
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        patient.name.trim().isEmpty
+                            ? strings.notRecorded
+                            : patient.name,
+                      ),
+                      subtitle: Text(
+                        formatDate(
+                          patient.prescriptionDate,
+                          languageCode: language,
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
-            ],
+                      onTap: () => context.go('/patients'),
+                    ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => context.go('/patients'),
+                      child: Text(strings.seeAll),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -197,7 +267,27 @@ class _Disclaimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: Theme.of(context).textTheme.bodySmall);
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.control),
+        border: Border.all(color: theme.colorScheme.primaryContainer),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: theme.textTheme.bodySmall)),
+        ],
+      ),
+    );
   }
 }
 
@@ -276,81 +366,70 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     final strings = ref.watch(stringsProvider);
     final patients = ref.watch(patientListProvider);
     final filter = _query.text.trim().toLowerCase();
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        PageWidth(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                strings.patients,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _query,
-                decoration: InputDecoration(hintText: strings.searchPatients),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 16),
-              patients.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => Text(strings.couldNotRead),
-                data: (items) {
-                  final visible = items.where((patient) {
-                    if (filter.isEmpty) return true;
-                    return patient.name.toLowerCase().contains(filter) ||
-                        patient.phone.toLowerCase().contains(filter);
-                  }).toList();
-                  if (visible.isEmpty) {
-                    return EmptyState(
-                      icon: AppIcons.users,
-                      title: strings.patients,
-                      body: strings.noPatients,
-                    );
-                  }
-                  return Column(
-                    children: [
-                      for (final patient in visible)
-                        Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            title: Text(
-                              patient.name.trim().isEmpty
-                                  ? strings.notRecorded
-                                  : patient.name,
-                            ),
-                            subtitle: Text(
-                              [
-                                    if (patient.age != null)
-                                      '${strings.age} ${patient.age}',
-                                    strings.sexLabel(patient.sex),
-                                    patient.phone,
-                                  ]
-                                  .where((part) => part.trim().isNotEmpty)
-                                  .join(' | '),
-                            ),
-                            trailing:
-                                Breakpoints.isMobile(
-                                  MediaQuery.sizeOf(context).width,
-                                )
-                                ? null
-                                : TextButton(
-                                    onPressed: () => _newFor(patient),
-                                    child: Text(strings.newForPatient),
-                                  ),
-                            onTap: () => _show(patient),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
+    return AppPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PageHeader(title: strings.patients),
+          TextField(
+            controller: _query,
+            decoration: InputDecoration(hintText: strings.searchPatients),
+            onChanged: (_) => setState(() {}),
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          patients.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, _) => Text(strings.couldNotRead),
+            data: (items) {
+              final visible = items.where((patient) {
+                if (filter.isEmpty) return true;
+                return patient.name.toLowerCase().contains(filter) ||
+                    patient.phone.toLowerCase().contains(filter);
+              }).toList();
+              if (visible.isEmpty) {
+                return EmptyState(
+                  icon: AppIcons.users,
+                  title: strings.patients,
+                  body: strings.noPatients,
+                );
+              }
+              return Column(
+                children: [
+                  for (final patient in visible)
+                    Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        title: Text(
+                          patient.name.trim().isEmpty
+                              ? strings.notRecorded
+                              : patient.name,
+                        ),
+                        subtitle: Text(
+                          [
+                            if (patient.age != null)
+                              '${strings.age} ${patient.age}',
+                            strings.sexLabel(patient.sex),
+                            patient.phone,
+                          ].where((part) => part.trim().isNotEmpty).join(' | '),
+                        ),
+                        trailing:
+                            !Breakpoints.isDesktop(
+                              MediaQuery.sizeOf(context).width,
+                            )
+                            ? null
+                            : TextButton(
+                                onPressed: () => _newFor(patient),
+                                child: Text(strings.newForPatient),
+                              ),
+                        onTap: () => _show(patient),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

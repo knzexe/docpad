@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_tokens.dart';
 
 import '../../../core/constants/breakpoints.dart';
 import '../../../core/widgets/feedback_widgets.dart';
 import '../../advice/widgets/advice_picker.dart';
-import '../../medicine/providers/medicine_providers.dart';
 import '../../medicine/widgets/medicine_search_panel.dart';
 import '../../patients/models/patient.dart';
 import '../../patients/widgets/patient_form.dart';
@@ -92,6 +92,9 @@ class _PrescriptionEditorScreenState
   Widget build(BuildContext context) {
     final strings = ref.watch(stringsProvider);
     final editor = ref.watch(editorProvider);
+    final compactActions = Breakpoints.usesCompactActions(
+      MediaQuery.sizeOf(context).width,
+    );
     ref.listen(editorProvider, (previous, next) {
       if (next.notice == 'saved' && previous?.notice != 'saved') {
         ScaffoldMessenger.of(context)
@@ -121,19 +124,46 @@ class _PrescriptionEditorScreenState
           ),
           actions: [
             if (prescription != null) ...[
-              TextButton(
-                key: const Key('save-draft'),
-                onPressed: editor.saving
-                    ? null
-                    : () => ref.read(editorProvider.notifier).saveDraft(),
-                child: Text(editor.saving ? strings.saving : strings.saveDraft),
-              ),
-              TextButton(
-                key: const Key('open-preview'),
-                onPressed: () =>
-                    context.push('/prescription/${prescription.id}/preview'),
-                child: Text(strings.preview),
-              ),
+              if (compactActions)
+                IconButton(
+                  key: const Key('save-draft'),
+                  tooltip: editor.saving ? strings.saving : strings.saveDraft,
+                  onPressed: editor.saving
+                      ? null
+                      : () => ref.read(editorProvider.notifier).saveDraft(),
+                  icon: editor.saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save_outlined),
+                )
+              else
+                TextButton(
+                  key: const Key('save-draft'),
+                  onPressed: editor.saving
+                      ? null
+                      : () => ref.read(editorProvider.notifier).saveDraft(),
+                  child: Text(
+                    editor.saving ? strings.saving : strings.saveDraft,
+                  ),
+                ),
+              if (compactActions)
+                IconButton(
+                  key: const Key('open-preview'),
+                  tooltip: strings.preview,
+                  onPressed: () =>
+                      context.push('/prescription/${prescription.id}/preview'),
+                  icon: const Icon(Icons.visibility_outlined),
+                )
+              else
+                TextButton(
+                  key: const Key('open-preview'),
+                  onPressed: () =>
+                      context.push('/prescription/${prescription.id}/preview'),
+                  child: Text(strings.preview),
+                ),
               IconButton(
                 tooltip: strings.delete,
                 onPressed: _delete,
@@ -187,11 +217,7 @@ class _EditorBody extends ConsumerWidget {
     final right = <Widget>[
       MedicineSearchPanel(
         onBrand: (brand) async {
-          final resolved = await ref
-              .read(medicineSearchProvider.notifier)
-              .resolveBrand(brand);
-          if (!context.mounted) return;
-          final medicine = await showMedicineEntry(context, brand: resolved);
+          final medicine = await showMedicineEntry(context, brand: brand);
           if (medicine != null) {
             ref.read(editorProvider.notifier).addMedicine(medicine);
           }
@@ -203,26 +229,38 @@ class _EditorBody extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final padding = const EdgeInsets.fromLTRB(20, 8, 20, 28);
-        if (Breakpoints.isDesktop(constraints.maxWidth)) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ListView(
-                  key: const Key('editor-left'),
-                  padding: padding,
-                  children: left,
-                ),
+        const padding = EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.xs,
+          AppSpacing.lg,
+          AppSpacing.xxl,
+        );
+        if (Breakpoints.usesEditorColumns(constraints.maxWidth)) {
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppLayout.editorMaxWidth,
               ),
-              Expanded(
-                child: ListView(
-                  key: const Key('editor-right'),
-                  padding: padding,
-                  children: right,
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: ListView(
+                      key: const Key('editor-left'),
+                      padding: padding,
+                      children: left,
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      key: const Key('editor-right'),
+                      padding: padding,
+                      children: right,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         }
         return ListView(

@@ -5,19 +5,22 @@ import '../../../core/theme/app_icons.dart';
 
 import 'package:uuid/uuid.dart';
 
+import '../../../core/constants/breakpoints.dart';
 import '../../../core/l10n/app_strings.dart';
-import '../../../core/utils/dates.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/feedback_widgets.dart';
 import '../../prescription/models/prescribed_medicine.dart';
 import '../../settings/providers/settings_providers.dart';
-import '../models/medex_brand.dart';
+import '../models/medicine_catalog_item.dart';
 import '../providers/medicine_providers.dart';
+import '../screens/medicine_library_screen.dart' show showMedicineLibraryForm;
 
 class MedicineSearchPanel extends ConsumerStatefulWidget {
   const MedicineSearchPanel({super.key, required this.onBrand});
 
-  final ValueChanged<MedExBrand> onBrand;
+  final ValueChanged<MedicineCatalogItem> onBrand;
 
   @override
   ConsumerState<MedicineSearchPanel> createState() =>
@@ -37,17 +40,10 @@ class _MedicineSearchPanelState extends ConsumerState<MedicineSearchPanel> {
   Widget build(BuildContext context) {
     final strings = ref.watch(stringsProvider);
     final state = ref.watch(medicineSearchProvider);
-    final health = ref.watch(catalogHealthProvider).asData?.value;
     final notifier = ref.read(medicineSearchProvider.notifier);
     final showDemo =
-        (health?.isFixture ?? false) ||
-        (state.source?.isFixture ?? false) ||
         state.brands.any((item) => item.isFixture) ||
         state.generics.any((item) => item.isFixture);
-    final showLive =
-        !showDemo &&
-        (state.source?.isLive ?? false) &&
-        state.query.trim().isNotEmpty;
 
     return SectionCard(
       title: strings.medicineSearch,
@@ -56,14 +52,6 @@ class _MedicineSearchPanelState extends ConsumerState<MedicineSearchPanel> {
         children: [
           if (showDemo)
             InfoBanner(message: '${strings.demoTitle}. ${strings.demoBody}'),
-          if (showLive) InfoBanner(message: strings.liveBody),
-          if (state.fromCache && state.cachedAt != null)
-            InfoBanner(
-              message:
-                  '${strings.cachedLead} ${strings.cachedAt(describeAge(state.cachedAt!))} ${strings.notVerified}.',
-            ),
-          if (state.detailWarning)
-            InfoBanner(message: strings.detailsUnavailable),
           SegmentedButton<CatalogMode>(
             segments: [
               ButtonSegment(
@@ -87,6 +75,15 @@ class _MedicineSearchPanelState extends ConsumerState<MedicineSearchPanel> {
               prefixIcon: const Icon(AppIcons.search, size: 18),
             ),
             onChanged: notifier.setQuery,
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const Key('add-medicine-manually'),
+              onPressed: _addManually,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(strings.addMedicineManually),
+            ),
           ),
           if (state.mode == CatalogMode.generics) ...[
             const SizedBox(height: 10),
@@ -136,6 +133,22 @@ class _MedicineSearchPanelState extends ConsumerState<MedicineSearchPanel> {
       ),
     );
   }
+
+  Future<void> _addManually() async {
+    final medicine = await showMedicineLibraryForm(context);
+    if (medicine == null || !mounted) return;
+    widget.onBrand(
+      MedicineCatalogItem(
+        id: medicine.id,
+        brandName: medicine.brandName,
+        genericName: medicine.genericName,
+        strength: medicine.strength,
+        dosageForm: medicine.dosageForm,
+        manufacturer: medicine.manufacturer,
+        sourceKind: 'local',
+      ),
+    );
+  }
 }
 
 class _BrandTile extends StatelessWidget {
@@ -145,7 +158,7 @@ class _BrandTile extends StatelessWidget {
     required this.onTap,
   });
 
-  final MedExBrand brand;
+  final MedicineCatalogItem brand;
   final AppStrings strings;
   final VoidCallback onTap;
 
@@ -161,12 +174,12 @@ class _BrandTile extends StatelessWidget {
       child: Material(
         color: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.control),
           side: BorderSide(color: theme.dividerColor),
         ),
         child: InkWell(
           key: Key('result-${brand.id}'),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.control),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -209,7 +222,7 @@ class _BrandTile extends StatelessWidget {
 class _GenericTile extends StatelessWidget {
   const _GenericTile({required this.generic});
 
-  final MedExGeneric generic;
+  final MedicineGeneric generic;
 
   @override
   Widget build(BuildContext context) {
@@ -218,12 +231,7 @@ class _GenericTile extends StatelessWidget {
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         title: Text(generic.name),
-        subtitle: Text(
-          [
-            if (generic.isFixture) 'DEMO DATA',
-            if (generic.description != null) generic.description!,
-          ].join(' | '),
-        ),
+        subtitle: generic.isFixture ? const Text('DEMO DATA') : null,
       ),
     );
   }
@@ -239,15 +247,15 @@ class _SourceChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E5),
-        borderRadius: BorderRadius.circular(99),
+        color: AppColors.warningLight,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         label,
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF8A5A00),
+          color: AppColors.warningText,
         ),
       ),
     );
@@ -256,10 +264,10 @@ class _SourceChip extends StatelessWidget {
 
 Future<PrescribedMedicine?> showMedicineEntry(
   BuildContext context, {
-  required MedExBrand brand,
+  required MedicineCatalogItem brand,
   PrescribedMedicine? existing,
 }) {
-  final mobile = MediaQuery.sizeOf(context).width < 720;
+  final mobile = Breakpoints.isMobile(MediaQuery.sizeOf(context).width);
   final child = MedicineEntryForm(brand: brand, existing: existing);
   if (mobile) {
     final height = MediaQuery.sizeOf(context).height;
@@ -292,7 +300,7 @@ Future<PrescribedMedicine?> showMedicineEntry(
 class MedicineEntryForm extends ConsumerStatefulWidget {
   const MedicineEntryForm({super.key, required this.brand, this.existing});
 
-  final MedExBrand brand;
+  final MedicineCatalogItem brand;
   final PrescribedMedicine? existing;
 
   @override

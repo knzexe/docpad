@@ -5,6 +5,7 @@ import '../l10n/app_strings.dart';
 import '../providers/connectivity_provider.dart';
 import '../../features/settings/providers/settings_providers.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_tokens.dart';
 
 class OfflineBanner extends ConsumerWidget {
   const OfflineBanner({super.key});
@@ -43,11 +44,14 @@ class _Banner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.control,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.control),
         border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),

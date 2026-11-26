@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:docpad/features/advice/models/advice_template.dart';
+
 import 'helpers/pump_app.dart';
 
 void main() {
@@ -36,4 +38,27 @@ void main() {
       expect(find.text('1. Drink water through the day'), findsOneWidget);
     },
   );
+
+  testWidgets('advice actions fit a narrow mobile screen', (tester) async {
+    final harness = await pumpDocPad(tester, size: const Size(320, 800));
+    await harness.advice.save(
+      AdviceTemplate(
+        id: 'advice-1',
+        title: 'Rest',
+        body: 'Rest as needed',
+        sortOrder: 0,
+        updatedAt: DateTime(2026),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('nav-advice')));
+    await tester.pumpAndSettle();
+    expect(find.text('Rest'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    expect(find.text('Move down'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

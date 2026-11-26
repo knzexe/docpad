@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../constants/clinic_branding.dart';
 import '../theme/app_icons.dart';
+import '../theme/app_tokens.dart';
 
 import '../../features/settings/providers/settings_providers.dart';
 import '../constants/breakpoints.dart';
@@ -93,7 +95,12 @@ class AppShell extends ConsumerWidget {
                   onDestinationSelected: (value) => _go(context, value),
                   leading: Padding(
                     padding: EdgeInsets.fromLTRB(desktop ? 12 : 8, 12, 12, 8),
-                    child: _Brand(extended: desktop),
+                    child: _Brand(
+                      extended: desktop,
+                      title: profile.clinicName.trim().isEmpty
+                          ? ClinicBranding.name
+                          : profile.clinicName.trim(),
+                    ),
                   ),
                   trailing: Expanded(
                     child: Align(
@@ -141,24 +148,31 @@ class AppShell extends ConsumerWidget {
 }
 
 class _Brand extends StatelessWidget {
-  const _Brand({required this.extended});
+  const _Brand({required this.extended, required this.title});
 
   final bool extended;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
-    final mark = Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(
-        AppIcons.stethoscope,
-        size: 18,
-        color: Theme.of(context).colorScheme.onPrimary,
+    final mark = ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.control),
+      child: Image.asset(
+        ClinicBranding.logoAsset,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          color: Theme.of(context).colorScheme.primary,
+          child: Icon(
+            AppIcons.stethoscope,
+            size: 18,
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
+        ),
       ),
     );
     if (!extended) return mark;
@@ -166,7 +180,15 @@ class _Brand extends StatelessWidget {
       children: [
         mark,
         const SizedBox(width: 10),
-        Text('DocPad', style: Theme.of(context).textTheme.titleMedium),
+        SizedBox(
+          width: 164,
+          child: Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
       ],
     );
   }

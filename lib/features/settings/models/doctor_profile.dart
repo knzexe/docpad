@@ -1,4 +1,5 @@
 import '../../../core/utils/json_readers.dart';
+import '../../../core/constants/clinic_branding.dart';
 
 const _unset = Object();
 
@@ -15,6 +16,16 @@ class DoctorProfile {
   });
 
   static const empty = DoctorProfile();
+  static const clinicDefault = DoctorProfile(
+    name: 'Dr. Morsalin Bin Sakhawat',
+    designation:
+        'MBBS (DU), CCD (BIRDEM), PGT (Medicine)\nEMO & Emergency Incharge (Doctor)',
+    clinicName: ClinicBranding.name,
+    clinicAddress:
+        '27/9/5 Meradia, South Banasree, Dhaka-1219, Farazy Hospital Building-2',
+    contact: '01682897670',
+    headerExtra: ClinicBranding.branch,
+  );
 
   final String name;
   final String designation;
@@ -28,6 +39,7 @@ class DoctorProfile {
   bool get hasVisibleHeader =>
       name.trim().isNotEmpty ||
       designation.trim().isNotEmpty ||
+      registrationNumber.trim().isNotEmpty ||
       clinicName.trim().isNotEmpty ||
       clinicAddress.trim().isNotEmpty ||
       contact.trim().isNotEmpty ||

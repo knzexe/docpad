@@ -6,6 +6,7 @@ import '../../../core/theme/app_icons.dart';
 
 import 'package:uuid/uuid.dart';
 
+import '../../../core/constants/breakpoints.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/feedback_widgets.dart';
 import '../../../core/widgets/responsive.dart';
@@ -34,78 +35,67 @@ class _AdviceScreenState extends ConsumerState<AdviceScreen> {
     final strings = ref.watch(stringsProvider);
     final advice = ref.watch(adviceListProvider);
     final filter = _search.text.trim().toLowerCase();
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        PageWidth(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return AppPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PageHeader(
+            title: strings.adviceLibrary,
+            subtitle: strings.adviceHint,
+          ),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(
-                strings.adviceLibrary,
-                style: Theme.of(context).textTheme.headlineMedium,
+              FilledButton.icon(
+                onPressed: () => _edit(),
+                icon: const Icon(AppIcons.plus),
+                label: Text(strings.addTemplate),
               ),
-              const SizedBox(height: 8),
-              Text(
-                strings.adviceHint,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  FilledButton.icon(
-                    onPressed: () => _edit(),
-                    icon: const Icon(AppIcons.plus),
-                    label: Text(strings.addTemplate),
+              SizedBox(
+                width: 280,
+                child: TextField(
+                  controller: _search,
+                  decoration: InputDecoration(
+                    hintText: strings.searchTemplates,
                   ),
-                  SizedBox(
-                    width: 280,
-                    child: TextField(
-                      controller: _search,
-                      decoration: InputDecoration(
-                        hintText: strings.searchTemplates,
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              advice.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => Text(strings.couldNotRead),
-                data: (items) {
-                  final visible = items.where((item) {
-                    if (filter.isEmpty) return true;
-                    return item.title.toLowerCase().contains(filter) ||
-                        item.body.toLowerCase().contains(filter);
-                  }).toList();
-                  if (visible.isEmpty) {
-                    return EmptyState(
-                      icon: AppIcons.clipboardList,
-                      title: strings.adviceLibrary,
-                      body: strings.noTemplates,
-                    );
-                  }
-                  return Column(
-                    children: [
-                      for (var index = 0; index < visible.length; index++)
-                        _TemplateCard(
-                          template: visible[index],
-                          index: items.indexOf(visible[index]),
-                          lastIndex: items.length - 1,
-                        ),
-                    ],
-                  );
-                },
+                  onChanged: (_) => setState(() {}),
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          advice.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, _) => Text(strings.couldNotRead),
+            data: (items) {
+              final visible = items.where((item) {
+                if (filter.isEmpty) return true;
+                return item.title.toLowerCase().contains(filter) ||
+                    item.body.toLowerCase().contains(filter);
+              }).toList();
+              if (visible.isEmpty) {
+                return EmptyState(
+                  icon: AppIcons.clipboardList,
+                  title: strings.adviceLibrary,
+                  body: strings.noTemplates,
+                );
+              }
+              return Column(
+                children: [
+                  for (var index = 0; index < visible.length; index++)
+                    _TemplateCard(
+                      template: visible[index],
+                      index: items.indexOf(visible[index]),
+                      lastIndex: items.length - 1,
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -176,8 +166,8 @@ class _TemplateEditorState extends State<_TemplateEditor> {
     final strings = widget.strings;
     return AlertDialog(
       title: Text(widget.heading),
-      content: SizedBox(
-        width: 420,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -230,6 +220,9 @@ class _TemplateCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = ref.watch(stringsProvider);
+    final compactActions = Breakpoints.usesCompactActions(
+      MediaQuery.sizeOf(context).width,
+    );
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -237,55 +230,110 @@ class _TemplateCard extends ConsumerWidget {
           template.title.trim().isEmpty ? template.body : template.title,
         ),
         subtitle: template.title.trim().isEmpty ? null : Text(template.body),
-        trailing: Wrap(
-          children: [
-            IconButton(
-              tooltip: strings.moveUp,
-              onPressed: index == 0
-                  ? null
-                  : () => ref
-                        .read(adviceListProvider.notifier)
-                        .reorder(index, -1),
-              icon: const Icon(AppIcons.arrowUp, size: 18),
-            ),
-            IconButton(
-              tooltip: strings.moveDown,
-              onPressed: index == lastIndex
-                  ? null
-                  : () =>
-                        ref.read(adviceListProvider.notifier).reorder(index, 1),
-              icon: const Icon(AppIcons.arrowDown, size: 18),
-            ),
-            IconButton(
-              tooltip: strings.edit,
-              onPressed: () async {
-                final screen = context
-                    .findAncestorStateOfType<_AdviceScreenState>();
-                await screen?._edit(template);
-              },
-              icon: const Icon(AppIcons.edit3, size: 18),
-            ),
-            IconButton(
-              tooltip: strings.delete,
-              onPressed: () async {
-                final ok = await confirmDestructive(
-                  context,
-                  strings: strings,
-                  title: strings.deleteTemplateTitle,
-                  body: strings.deleteTemplateBody,
-                  confirmLabel: strings.delete,
-                );
-                if (ok) {
-                  await ref
-                      .read(adviceListProvider.notifier)
-                      .delete(template.id);
-                }
-              },
-              icon: const Icon(AppIcons.trash2, size: 18),
-            ),
-          ],
-        ),
+        trailing: compactActions
+            ? PopupMenuButton<_AdviceAction>(
+                onSelected: (action) async {
+                  switch (action) {
+                    case _AdviceAction.up:
+                      await ref
+                          .read(adviceListProvider.notifier)
+                          .reorder(index, -1);
+                    case _AdviceAction.down:
+                      await ref
+                          .read(adviceListProvider.notifier)
+                          .reorder(index, 1);
+                    case _AdviceAction.edit:
+                      final screen = context
+                          .findAncestorStateOfType<_AdviceScreenState>();
+                      await screen?._edit(template);
+                    case _AdviceAction.delete:
+                      final ok = await confirmDestructive(
+                        context,
+                        strings: strings,
+                        title: strings.deleteTemplateTitle,
+                        body: strings.deleteTemplateBody,
+                        confirmLabel: strings.delete,
+                      );
+                      if (ok) {
+                        await ref
+                            .read(adviceListProvider.notifier)
+                            .delete(template.id);
+                      }
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: _AdviceAction.up,
+                    enabled: index > 0,
+                    child: Text(strings.moveUp),
+                  ),
+                  PopupMenuItem(
+                    value: _AdviceAction.down,
+                    enabled: index < lastIndex,
+                    child: Text(strings.moveDown),
+                  ),
+                  PopupMenuItem(
+                    value: _AdviceAction.edit,
+                    child: Text(strings.edit),
+                  ),
+                  PopupMenuItem(
+                    value: _AdviceAction.delete,
+                    child: Text(strings.delete),
+                  ),
+                ],
+              )
+            : Wrap(
+                children: [
+                  IconButton(
+                    tooltip: strings.moveUp,
+                    onPressed: index == 0
+                        ? null
+                        : () => ref
+                              .read(adviceListProvider.notifier)
+                              .reorder(index, -1),
+                    icon: const Icon(AppIcons.arrowUp, size: 18),
+                  ),
+                  IconButton(
+                    tooltip: strings.moveDown,
+                    onPressed: index == lastIndex
+                        ? null
+                        : () => ref
+                              .read(adviceListProvider.notifier)
+                              .reorder(index, 1),
+                    icon: const Icon(AppIcons.arrowDown, size: 18),
+                  ),
+                  IconButton(
+                    tooltip: strings.edit,
+                    onPressed: () async {
+                      final screen = context
+                          .findAncestorStateOfType<_AdviceScreenState>();
+                      await screen?._edit(template);
+                    },
+                    icon: const Icon(AppIcons.edit3, size: 18),
+                  ),
+                  IconButton(
+                    tooltip: strings.delete,
+                    onPressed: () async {
+                      final ok = await confirmDestructive(
+                        context,
+                        strings: strings,
+                        title: strings.deleteTemplateTitle,
+                        body: strings.deleteTemplateBody,
+                        confirmLabel: strings.delete,
+                      );
+                      if (ok) {
+                        await ref
+                            .read(adviceListProvider.notifier)
+                            .delete(template.id);
+                      }
+                    },
+                    icon: const Icon(AppIcons.trash2, size: 18),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
+
+enum _AdviceAction { up, down, edit, delete }
