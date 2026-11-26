@@ -11,7 +11,7 @@ Map<String, dynamic> asJsonMap(dynamic value) {
   );
 }
 
-MedicineSearchPage parseMedicineSearch(dynamic body) {
+MedicineSearchPage<MedExBrand> parseMedicineSearch(dynamic body) {
   final map = asJsonMap(body);
   final data = map['data'];
   final meta = map['meta'];

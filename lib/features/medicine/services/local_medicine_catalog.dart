@@ -10,7 +10,7 @@ class LocalMedicineCatalog implements MedicineCatalog {
   final MedicineRepository repository;
 
   @override
-  Future<MedicineSearchPage> searchMedicinesPage({
+  Future<MedicineSearchPage<MedicineCatalogItem>> searchMedicinesPage({
     required String query,
     int page = 1,
     int limit = 20,
@@ -36,7 +36,15 @@ class LocalMedicineCatalog implements MedicineCatalog {
     return MedicineSearchPage(
       items: items,
       page: safePage,
+      limit: safeLimit,
+      total: matches.length,
+      totalPages: totalPages,
       hasNext: safePage < totalPages,
+      source: const CatalogSource(
+        kind: 'local',
+        provider: 'docpad-library',
+        providerName: 'My Medicine Library',
+      ),
     );
   }
 
@@ -50,10 +58,7 @@ class LocalMedicineCatalog implements MedicineCatalog {
       if (generic != null && generic.toLowerCase().contains(needle)) {
         seen.putIfAbsent(
           generic.toLowerCase(),
-          () => MedicineGeneric(
-            name: generic,
-            sourceKind: 'local',
-          ),
+          () => MedicineGeneric(name: generic, sourceKind: 'local'),
         );
       }
     }

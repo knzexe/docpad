@@ -15,7 +15,7 @@ abstract class MedicineCatalogApi {
     CancelToken? cancelToken,
   });
 
-  Future<MedicineSearchPage> searchMedicinesPage({
+  Future<MedicineSearchPage<MedExBrand>> searchMedicinesPage({
     required String query,
     int page = 1,
     int limit = 20,
@@ -67,7 +67,7 @@ class MedExApiService implements MedicineCatalogApi {
   }
 
   @override
-  Future<MedicineSearchPage> searchMedicinesPage({
+  Future<MedicineSearchPage<MedExBrand>> searchMedicinesPage({
     required String query,
     int page = 1,
     int limit = 20,
@@ -152,7 +152,7 @@ class MedExApiService implements MedicineCatalogApi {
       );
     } on DioException catch (error) {
       if (error.type == DioExceptionType.cancel) {
-        throw const CancelledRequest();
+        rethrow;
       }
       throw _mapDio(error);
     }

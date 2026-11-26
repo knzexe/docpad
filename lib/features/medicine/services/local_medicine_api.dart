@@ -32,10 +32,11 @@ class LocalMedicineApi implements MedicineCatalogApi {
     int page = 1,
     int limit = 20,
     CancelToken? cancelToken,
-  }) async => (await searchMedicinesPage(query: query, page: page, limit: limit)).items;
+  }) async =>
+      (await searchMedicinesPage(query: query, page: page, limit: limit)).items;
 
   @override
-  Future<MedicineSearchPage> searchMedicinesPage({
+  Future<MedicineSearchPage<MedExBrand>> searchMedicinesPage({
     required String query,
     int page = 1,
     int limit = 20,
@@ -43,17 +44,22 @@ class LocalMedicineApi implements MedicineCatalogApi {
   }) async {
     final all = await repository.getAll();
     final needle = query.trim().toLowerCase();
-    final matches = all.where((item) {
-      return item.brandName.toLowerCase().contains(needle) ||
-          (item.genericName?.toLowerCase().contains(needle) ?? false);
-    }).map(_toBrand).toList();
+    final matches = all
+        .where((item) {
+          return item.brandName.toLowerCase().contains(needle) ||
+              (item.genericName?.toLowerCase().contains(needle) ?? false);
+        })
+        .map(_toBrand)
+        .toList();
     final safeLimit = limit.clamp(1, 100);
     final safePage = page < 1 ? 1 : page;
     final start = (safePage - 1) * safeLimit;
     final items = start >= matches.length
         ? const <MedExBrand>[]
         : matches.sublist(start, (start + safeLimit).clamp(0, matches.length));
-    final totalPages = matches.isEmpty ? 1 : (matches.length + safeLimit - 1) ~/ safeLimit;
+    final totalPages = matches.isEmpty
+        ? 1
+        : (matches.length + safeLimit - 1) ~/ safeLimit;
     return MedicineSearchPage(
       items: items,
       page: safePage,
@@ -70,8 +76,12 @@ class LocalMedicineApi implements MedicineCatalogApi {
     String id, {
     CancelToken? cancelToken,
   }) async {
-    final item = (await repository.getAll()).where((medicine) => medicine.id == id).firstOrNull;
-    if (item == null) throw StateError('Medicine was not found in the local library.');
+    final item = (await repository.getAll())
+        .where((medicine) => medicine.id == id)
+        .firstOrNull;
+    if (item == null) {
+      throw StateError('Medicine was not found in the local library.');
+    }
     return _toBrand(item);
   }
 
@@ -81,7 +91,8 @@ class LocalMedicineApi implements MedicineCatalogApi {
     int page = 1,
     int limit = 20,
     CancelToken? cancelToken,
-  }) async => (await searchGenericsPage(query: query, page: page, limit: limit)).items;
+  }) async =>
+      (await searchGenericsPage(query: query, page: page, limit: limit)).items;
 
   @override
   Future<GenericSearchPage> searchGenericsPage({

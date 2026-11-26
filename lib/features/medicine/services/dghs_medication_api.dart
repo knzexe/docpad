@@ -57,7 +57,7 @@ class DghsMedicationApi implements MedicineCatalogApi {
   }
 
   @override
-  Future<MedicineSearchPage> searchMedicinesPage({
+  Future<MedicineSearchPage<MedExBrand>> searchMedicinesPage({
     required String query,
     int page = 1,
     int limit = 20,
@@ -78,7 +78,8 @@ class DghsMedicationApi implements MedicineCatalogApi {
     }
     final auth = await _authorization();
     final brand = await _fetchDrug(id, auth, cancelToken);
-    final seen = await cache.readDghsSeen()..add(id);
+    final seen = await cache.readDghsSeen()
+      ..add(id);
     final items = [...await cache.readDghsCatalog()];
     if (brand != null && items.every((item) => item.id != brand.id)) {
       items.add(brand);
@@ -150,7 +151,10 @@ class DghsMedicationApi implements MedicineCatalogApi {
     );
   }
 
-  Future<List<MedExBrand>> _matching(String query, CancelToken? cancelToken) async {
+  Future<List<MedExBrand>> _matching(
+    String query,
+    CancelToken? cancelToken,
+  ) async {
     final needle = query.trim().toLowerCase();
     if (needle.isEmpty || needle.length > 200) {
       throw const AppException(
@@ -264,8 +268,9 @@ class DghsMedicationApi implements MedicineCatalogApi {
       );
       return dghsBrandFromMedication(response.data);
     } on DioException catch (error) {
-      if (error.type == DioExceptionType.cancel) throw const CancelledRequest();
-      if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
+      if (error.type == DioExceptionType.cancel) rethrow;
+      if (error.response?.statusCode == 401 ||
+          error.response?.statusCode == 403) {
         throw const AppException(
           'The terminology registry rejected the TR login. Check the username and password in Settings.',
           code: 'unauthorized',
@@ -295,12 +300,12 @@ class DghsMedicationApi implements MedicineCatalogApi {
       }
       return body;
     } on DioException catch (error) {
-      if (error.type == DioExceptionType.cancel) throw const CancelledRequest();
+      if (error.type == DioExceptionType.cancel) rethrow;
       throw _map(error);
     }
   }
 
-  MedicineSearchPage _page(
+  MedicineSearchPage<MedExBrand> _page(
     List<MedExBrand> brands, {
     required int page,
     required int limit,

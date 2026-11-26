@@ -8,7 +8,7 @@ class FakeCatalog implements MedicineCatalog {
   FakeCatalog({this.error, this.page});
 
   Object? error;
-  MedicineSearchPage? page;
+  MedicineSearchPage<MedicineCatalogItem>? page;
   int searchCalls = 0;
   Completer<void>? gate;
 
@@ -22,7 +22,7 @@ class FakeCatalog implements MedicineCatalog {
     sourceKind: 'fixture',
   );
 
-  static MedicineSearchPage fixturePage() {
+  static MedicineSearchPage<MedicineCatalogItem> fixturePage() {
     return const MedicineSearchPage(
       items: [fixtureBrand],
       page: 1,
@@ -31,7 +31,7 @@ class FakeCatalog implements MedicineCatalog {
   }
 
   @override
-  Future<MedicineSearchPage> searchMedicinesPage({
+  Future<MedicineSearchPage<MedicineCatalogItem>> searchMedicinesPage({
     required String query,
     int page = 1,
     int limit = 20,
@@ -41,11 +41,7 @@ class FakeCatalog implements MedicineCatalog {
     if (pending != null) await pending.future;
     if (error != null) throw error!;
     return this.page ??
-        const MedicineSearchPage(
-          items: [],
-          page: 1,
-          hasNext: false,
-        );
+        const MedicineSearchPage(items: [], page: 1, hasNext: false);
   }
 
   @override

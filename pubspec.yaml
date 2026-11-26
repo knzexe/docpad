@@ -49,6 +49,7 @@ dependencies:
   connectivity_plus: ^7.3.2
   path_provider: ^2.1.6
   supabase_flutter: ^2.18.3
+  dio: ^5.11.1
 
 dev_dependencies:
   flutter_test:
