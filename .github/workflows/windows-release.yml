@@ -1,0 +1,51 @@
+name: Signed Windows release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+        shell: pwsh
+
+      - name: Build and sign Windows installer
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          $releaseVersion = $env:GITHUB_REF_NAME -replace '^v', ''
+          if ($releaseVersion -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Release tag must be vMAJOR.MINOR.PATCH; got $env:GITHUB_REF_NAME."
+          }
+          .\windows\installer\build_signed.ps1 -ReleaseVersion $releaseVersion
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releaseVersion = $env:GITHUB_REF_NAME -replace '^v', ''
+          $installerPath = "build/windows/installer/RaifaMedicineSetup-$releaseVersion-x64.exe"
+          if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) {
+            throw "Signed installer was not found: $installerPath"
+          }
+          gh release create $env:GITHUB_REF_NAME $installerPath --generate-notes

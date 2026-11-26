@@ -1,5 +1,7 @@
 #define AppName "Raifa Medicine & SS Health Care"
+#ifndef AppVersion
 #define AppVersion "1.0.0"
+#endif
 #define AppPublisher "Raifa Medicine & SS Health Care"
 #define AppExeName "docpad.exe"
 
@@ -8,6 +10,8 @@ AppId={{0da77509-70b5-47d4-bfb7-d4543f2ec2fe}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
+SignTool=DocPadSignTool
+SignedUninstaller=yes
 DefaultDirName={localappdata}\Programs\RaifaMedicine
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes

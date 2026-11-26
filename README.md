@@ -76,16 +76,32 @@ dart run flutter_launcher_icons
 
 ## Windows installer
 
-Install Inno Setup 6, then build the Windows release and installer:
+Signed Windows releases are built from version tags. Before creating a release:
 
-```bash
-flutter build windows --release
-iscc windows/installer/docpad.iss
-```
+1. Add the repository Actions secrets `WINDOWS_SIGNING_CERTIFICATE_BASE64`
+   (the trusted publisher PFX encoded as Base64) and
+   `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`. Create the Base64 value on a trusted
+   machine with
+   `[Convert]::ToBase64String([IO.File]::ReadAllBytes('publisher.pfx'))`.
+   Base64 is not encryption: protect it like the PFX, and never commit or share
+   either value.
+2. Update the `version` in `pubspec.yaml`, commit it, and push a matching tag,
+   such as `v1.0.1`.
+3. The Windows release workflow builds the app, signs `docpad.exe`, creates
+   the Inno Setup installer, signs it, and attaches it to the GitHub release.
 
-The setup executable is written to `build/windows/installer`. It installs
-per-user, creates a Start menu shortcut, and offers an optional desktop
-shortcut. The installer is not code-signed.
+The installer is written to `build/windows/installer`. For local signed builds,
+install Flutter, the Windows SDK, and Inno Setup 6, set the same two certificate
+environment variables, and run
+`windows/installer/build_signed.ps1`. If cloud sync is required, also set
+`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`; set both or neither.
+The installer installs per-user, creates a Start menu shortcut, and offers an
+optional desktop shortcut.
+
+Signing identifies the publisher and allows SmartScreen reputation to build.
+Newly signed apps may still receive a warning until they establish sufficient
+reputation; no signing setup can guarantee that SmartScreen will immediately
+stop warning.
 
 ## What you can do
 
