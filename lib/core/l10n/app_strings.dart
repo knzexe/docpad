@@ -325,6 +325,68 @@ class AppStrings {
     'সাইন ইন হয়েছে। প্রশাসক অ্যাকাউন্টটি যুক্ত করলে ক্লিনিকের প্রবেশাধিকার পাওয়া যাবে।',
   );
   String get dataManagement => _t('Data on this device', 'এই ডিভাইসের ডেটা');
+  String get encryptedBackup => _t('Encrypted backup', 'এনক্রিপ্টেড ব্যাকআপ');
+  String get backupDescription => _t(
+    'Create a password-protected backup of your clinic profile and local clinical records. Keep the password safe; it cannot be recovered.',
+    'ক্লিনিক প্রোফাইল ও স্থানীয় ক্লিনিক্যাল রেকর্ডের পাসওয়ার্ড-সুরক্ষিত ব্যাকআপ তৈরি করুন। পাসওয়ার্ড নিরাপদে রাখুন; এটি পুনরুদ্ধার করা যাবে না।',
+  );
+  String get createBackup => _t('Create backup', 'ব্যাকআপ তৈরি করুন');
+  String get restoreBackup => _t('Restore backup', 'ব্যাকআপ পুনরুদ্ধার');
+  String get backupPassword => _t('Backup password', 'ব্যাকআপ পাসওয়ার্ড');
+  String get confirmBackupPassword =>
+      _t('Confirm password', 'পাসওয়ার্ড নিশ্চিত করুন');
+  String get backupPasswordTooShort =>
+      _t('Use at least 12 characters.', 'কমপক্ষে ১২টি অক্ষর ব্যবহার করুন।');
+  String get backupPasswordMismatch =>
+      _t('The passwords do not match.', 'পাসওয়ার্ড দুটি মেলেনি।');
+  String get backupPasswordRequired =>
+      _t('Enter the backup password.', 'ব্যাকআপ পাসওয়ার্ড লিখুন।');
+  String get backupPasswordPrompt => _t(
+    'Choose a password with at least 12 characters. DocPad cannot recover it if you forget it.',
+    'কমপক্ষে ১২টি অক্ষরের পাসওয়ার্ড দিন। ভুলে গেলে DocPad এটি পুনরুদ্ধার করতে পারবে না।',
+  );
+  String get restorePasswordPrompt => _t(
+    'Enter the password used when this backup was created.',
+    'এই ব্যাকআপ তৈরির সময় ব্যবহৃত পাসওয়ার্ড লিখুন।',
+  );
+  String get backupCreated =>
+      _t('Encrypted backup saved.', 'এনক্রিপ্টেড ব্যাকআপ সংরক্ষণ করা হয়েছে।');
+  String get restoreBackupTitle =>
+      _t('Replace local records?', 'স্থানীয় রেকর্ড প্রতিস্থাপন করবেন?');
+  String backupRestoreConfirmation(int count) => _t(
+    'This replaces $count local records and the clinic profile on this device. Shared Supabase records are not deleted and may sync back later.',
+    'এটি এই ডিভাইসের $countটি স্থানীয় রেকর্ড ও ক্লিনিক প্রোফাইল প্রতিস্থাপন করবে। Supabase-এর শেয়ার করা রেকর্ড মুছবে না এবং পরে আবার সিঙ্ক হতে পারে।',
+  );
+  String get confirmRestore =>
+      _t('Replace local data', 'স্থানীয় ডেটা প্রতিস্থাপন');
+  String get backupRestored => _t(
+    'Local records were restored from the encrypted backup.',
+    'এনক্রিপ্টেড ব্যাকআপ থেকে স্থানীয় রেকর্ড পুনরুদ্ধার করা হয়েছে।',
+  );
+  String get backupNeedsSignedOut => _t(
+    'Sign out of clinic sync before restoring a backup.',
+    'ব্যাকআপ পুনরুদ্ধারের আগে ক্লিনিক সিঙ্ক থেকে সাইন আউট করুন।',
+  );
+  String get backupNeedsSync => _t(
+    'Sync or resolve pending clinic changes before restoring a backup.',
+    'ব্যাকআপ পুনরুদ্ধারের আগে ক্লিনিকের অপেক্ষমাণ পরিবর্তন সিঙ্ক বা সমাধান করুন।',
+  );
+  String get backupDraftSaveFailed => _t(
+    'The current draft could not be saved, so restore was stopped.',
+    'বর্তমান খসড়া সংরক্ষণ করা যায়নি, তাই পুনরুদ্ধার বন্ধ করা হয়েছে।',
+  );
+  String get backupFileAccessFailed =>
+      _t('The backup file could not be accessed.', 'ব্যাকআপ ফাইল খোলা যায়নি।');
+  String get backupFileTooLarge => _t(
+    'The selected backup file is too large to import.',
+    'নির্বাচিত ব্যাকআপ ফাইলটি আমদানির জন্য অনেক বড়।',
+  );
+  String get backupWorking =>
+      _t('Working with backup…', 'ব্যাকআপ প্রক্রিয়াধীন…');
+  String get backupRestoreWarning => _t(
+    'Restore replaces local data only. Sign out and sync pending changes first; cloud records are not deleted.',
+    'পুনরুদ্ধার শুধু স্থানীয় ডেটা প্রতিস্থাপন করে। আগে সাইন আউট করুন এবং অপেক্ষমাণ পরিবর্তন সিঙ্ক করুন; ক্লাউডের রেকর্ড মুছবে না।',
+  );
   String get localStorageNotice => _t(
     'Prescriptions, patients, medicines, advice templates, and the clinic profile are encrypted in local storage and remain available offline. When Supabase is configured and an authorized clinic account is signed in, changes sync to that shared clinic. This is not a substitute for privacy, security, backup, and regulatory review.',
     'প্রেসক্রিপশন, রোগী, ওষুধ, পরামর্শ টেমপ্লেট ও ক্লিনিক প্রোফাইল স্থানীয় স্টোরেজে এনক্রিপ্ট করা থাকে এবং অফলাইনে পাওয়া যায়। Supabase সেট করা ও অনুমোদিত অ্যাকাউন্টে সাইন ইন থাকলে পরিবর্তনগুলো ক্লিনিকে সিঙ্ক হয়।',

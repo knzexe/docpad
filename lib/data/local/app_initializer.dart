@@ -10,13 +10,14 @@ import '../../core/errors/app_exception.dart';
 import '../../core/utils/app_log.dart';
 import '../cloud/clinic_sync_service.dart';
 import '../cloud/cloud_synced_key_value_store.dart';
+import '../repository_providers.dart';
 import '../../features/advice/repositories/advice_repository.dart';
 import '../../features/medicine/repositories/medicine_repository.dart';
 import '../../features/patients/repositories/patient_repository.dart';
 import '../../features/prescription/repositories/prescription_repository.dart';
 import '../../features/settings/repositories/profile_repository.dart';
 import '../../features/settings/repositories/settings_repository.dart';
-import '../repository_providers.dart';
+import 'encrypted_backup_service.dart';
 import 'key_value_store.dart';
 
 class AppInitializer {
@@ -47,6 +48,7 @@ class AppInitializer {
       outbox: await open('sync_outbox'),
       configurationError: cloudConfigurationError,
     );
+    final backupService = EncryptedBackupService(stores: stores);
     await syncService.initialize();
 
     KeyValueStore synced(String collection) {
@@ -59,6 +61,7 @@ class AppInitializer {
 
     return [
       clinicSyncServiceProvider.overrideWithValue(syncService),
+      encryptedBackupServiceProvider.overrideWithValue(backupService),
       settingsRepositoryProvider.overrideWithValue(
         PreferencesSettingsRepository(preferences),
       ),

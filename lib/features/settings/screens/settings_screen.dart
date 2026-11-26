@@ -3,14 +3,17 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/clinic_branding.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/utils/app_log.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/feedback_widgets.dart';
 import '../../../core/widgets/responsive.dart';
 import '../../../data/cloud/clinic_sync_service.dart';
+import '../../../data/local/encrypted_backup_service.dart';
 import '../../../data/repository_providers.dart';
 import '../../medicine/providers/medicine_library_provider.dart';
 import '../../prescription/providers/editor_provider.dart';
@@ -39,6 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String? _logo;
   String? _message;
   String? _cloudMessage;
+  bool _backupBusy = false;
 
   @override
   void initState() {
@@ -223,14 +227,280 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<String?> _requestBackupPassword({required bool confirm}) async {
+    final strings = ref.read(stringsProvider);
+    final password = TextEditingController();
+    final confirmation = TextEditingController();
+    String? validationMessage;
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) => AlertDialog(
+            title: Text(confirm ? strings.createBackup : strings.restoreBackup),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  confirm
+                      ? strings.backupPasswordPrompt
+                      : strings.restorePasswordPrompt,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: password,
+                  obscureText: true,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: strings.backupPassword,
+                  ),
+                ),
+                if (confirm) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmation,
+                    obscureText: true,
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    decoration: InputDecoration(
+                      labelText: strings.confirmBackupPassword,
+                    ),
+                  ),
+                ],
+                if (validationMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    validationMessage!,
+                    style: TextStyle(
+                      color: Theme.of(dialogContext).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(strings.cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (confirm &&
+                      password.text.runes.length <
+                          EncryptedBackupService.minimumPasswordLength) {
+                    setDialogState(
+                      () => validationMessage = strings.backupPasswordTooShort,
+                    );
+                    return;
+                  }
+                  if (password.text.isEmpty) {
+                    setDialogState(
+                      () => validationMessage = strings.backupPasswordRequired,
+                    );
+                    return;
+                  }
+                  if (confirm && password.text != confirmation.text) {
+                    setDialogState(
+                      () => validationMessage = strings.backupPasswordMismatch,
+                    );
+                    return;
+                  }
+                  Navigator.pop(dialogContext, password.text);
+                },
+                child: Text(
+                  confirm ? strings.createBackup : strings.restoreBackup,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      password.dispose();
+      confirmation.dispose();
+    }
+  }
+
+  Future<bool?> _confirmBackupRestore(int recordCount) {
+    final strings = ref.read(stringsProvider);
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(strings.restoreBackupTitle),
+        content: Text(strings.backupRestoreConfirmation(recordCount)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(strings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(strings.confirmRestore),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _restoreBlockReason(ClinicSyncService service, AppStrings strings) {
+    if (service.currentEmail != null) return strings.backupNeedsSignedOut;
+    if (service.status.pendingChanges > 0) return strings.backupNeedsSync;
+    if (service.status.phase == ClinicSyncPhase.connecting ||
+        service.status.phase == ClinicSyncPhase.syncing) {
+      return strings.backupNeedsSync;
+    }
+    return null;
+  }
+
+  Future<void> _createEncryptedBackup() async {
+    final strings = ref.read(stringsProvider);
+    String? password = await _requestBackupPassword(confirm: true);
+    if (password == null || !mounted) return;
+
+    setState(() {
+      _backupBusy = true;
+      _message = null;
+    });
+    try {
+      final bytes = await ref
+          .read(encryptedBackupServiceProvider)
+          .createBackup(password);
+      final location = await FilePicker.saveFile(
+        fileName: 'docpad-clinic-backup.docpadbackup',
+        bytes: bytes,
+        mimeType: 'application/octet-stream',
+        dialogTitle: strings.createBackup,
+      );
+      if (location != null && mounted) {
+        setState(() => _message = strings.backupCreated);
+      }
+    } on EncryptedBackupException catch (error) {
+      if (mounted) setState(() => _message = error.message);
+    } on PlatformException catch (error) {
+      AppLog.error('encrypted-backup-export', error);
+      if (mounted) setState(() => _message = strings.backupFileAccessFailed);
+    } finally {
+      password = null;
+      if (mounted) setState(() => _backupBusy = false);
+    }
+  }
+
+  Future<void> _restoreEncryptedBackup() async {
+    final strings = ref.read(stringsProvider);
+    final syncService = ref.read(clinicSyncServiceProvider);
+    final blocked = _restoreBlockReason(syncService, strings);
+    if (blocked != null) {
+      setState(() => _message = blocked);
+      return;
+    }
+
+    PlatformFile? file;
+    try {
+      file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: const ['docpadbackup'],
+      );
+    } on PlatformException catch (error) {
+      AppLog.error('encrypted-backup-select', error);
+      if (mounted) setState(() => _message = strings.backupFileAccessFailed);
+      return;
+    }
+    if (file == null || !mounted) return;
+    int? fileLength;
+    try {
+      fileLength = await file.length();
+    } on PlatformException catch (error) {
+      AppLog.error('encrypted-backup-file-size', error);
+      if (mounted) setState(() => _message = strings.backupFileAccessFailed);
+      return;
+    }
+    if (fileLength != null &&
+        fileLength > EncryptedBackupService.maxBackupBytes) {
+      setState(() => _message = strings.backupFileTooLarge);
+      return;
+    }
+
+    String? password = await _requestBackupPassword(confirm: false);
+    if (password == null || !mounted) return;
+
+    setState(() {
+      _backupBusy = true;
+      _message = null;
+    });
+    try {
+      final bytes = await file.readAsBytes();
+      final backup = await ref
+          .read(encryptedBackupServiceProvider)
+          .decryptBackup(bytes, password);
+      password = null;
+      if (!mounted) return;
+
+      final confirmed = await _confirmBackupRestore(backup.recordCount);
+      if (confirmed != true || !mounted) return;
+
+      final currentBlock = _restoreBlockReason(syncService, strings);
+      if (currentBlock != null) {
+        setState(() => _message = currentBlock);
+        return;
+      }
+
+      final editor = ref.read(editorProvider);
+      if (editor.dirty && editor.prescription != null) {
+        final saved = await ref.read(editorProvider.notifier).saveDraft();
+        if (!saved) {
+          if (mounted) {
+            setState(() => _message = strings.backupDraftSaveFailed);
+          }
+          return;
+        }
+      }
+      final pendingBlock = _restoreBlockReason(syncService, strings);
+      if (pendingBlock != null) {
+        if (mounted) setState(() => _message = pendingBlock);
+        return;
+      }
+
+      ref.read(editorProvider.notifier).suspendAndForget();
+      await ref.read(encryptedBackupServiceProvider).restoreLocalData(backup);
+      ref.invalidate(profileProvider);
+      ref.invalidate(prescriptionListProvider);
+      ref.invalidate(patientListProvider);
+      ref.invalidate(adviceListProvider);
+      ref.invalidate(medicineLibraryProvider);
+      final profile = ref.read(profileProvider);
+      if (!mounted) return;
+      setState(() {
+        _name.text = profile.name;
+        _designation.text = profile.designation;
+        _registration.text = profile.registrationNumber;
+        _clinic.text = profile.clinicName;
+        _address.text = profile.clinicAddress;
+        _contact.text = profile.contact;
+        _header.text = profile.headerExtra;
+        _logo = profile.logoBase64;
+        _message = strings.backupRestored;
+      });
+    } on EncryptedBackupException catch (error) {
+      if (mounted) setState(() => _message = error.message);
+    } on PlatformException catch (error) {
+      AppLog.error('encrypted-backup-import', error);
+      if (mounted) setState(() => _message = strings.backupFileAccessFailed);
+    } finally {
+      password = null;
+      if (mounted) setState(() => _backupBusy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = ref.watch(stringsProvider);
     final settings = ref.watch(settingsProvider);
     final syncService = ref.read(clinicSyncServiceProvider);
     final syncStatus =
-        ref.watch(clinicSyncStatusProvider).asData?.value ??
-        syncService.status;
+        ref.watch(clinicSyncStatusProvider).asData?.value ?? syncService.status;
     final signedInEmail = syncService.currentEmail;
     return AppPage(
       maxWidth: AppLayout.settingsMaxWidth,
@@ -433,6 +703,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  strings.encryptedBackup,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  strings.backupDescription,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  strings.backupRestoreWarning,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      key: const Key('create-encrypted-backup'),
+                      onPressed: _backupBusy ? null : _createEncryptedBackup,
+                      icon: const Icon(Icons.lock_outline),
+                      label: Text(strings.createBackup),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('restore-encrypted-backup'),
+                      onPressed: _backupBusy ? null : _restoreEncryptedBackup,
+                      icon: const Icon(Icons.restore),
+                      label: Text(strings.restoreBackup),
+                    ),
+                  ],
+                ),
+                if (_backupBusy) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    strings.backupWorking,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+                const SizedBox(height: 20),
                 Text(
                   strings.eraseBody,
                   style: Theme.of(context).textTheme.bodySmall,

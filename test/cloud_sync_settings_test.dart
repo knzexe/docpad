@@ -14,5 +14,7 @@ void main() {
     expect(find.text('Personal cloud sync'), findsOneWidget);
     expect(find.textContaining('Cloud sync is not configured'), findsOneWidget);
     expect(find.text('Sign in'), findsNothing);
+    expect(find.byKey(const Key('create-encrypted-backup')), findsOneWidget);
+    expect(find.byKey(const Key('restore-encrypted-backup')), findsOneWidget);
   });
 }

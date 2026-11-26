@@ -123,6 +123,17 @@ Prescriptions, patients, advice templates, medicines, and the doctor profile are
 App preferences use SharedPreferences. The app uses a fixed white/light
 interface; appearance is not controlled by the device theme.
 
+Create an encrypted `.docpadbackup` file from Settings using a password with at
+least 12 characters. Backups use AES-256-GCM with a PBKDF2-HMAC-SHA256 key
+derived from that password. The password is not stored and cannot be recovered.
+The file contains the clinic profile, prescriptions, patients, advice, and
+medicines; it does not contain cloud credentials, sync queue state, or app
+preferences. Keep the backup file and password private.
+
+Restore replaces these records on this device only. Sign out of clinic sync and
+resolve pending changes before restoring. Shared Supabase records are not
+deleted and may sync back to the device after signing in again.
+
 Erase local clinical data from Settings by typing `DELETE`. That removes prescriptions, patients, advice, and medicines; custom clinic details reset to the supplied defaults. The language preference stays.
 
 The app does not log patient names, phone numbers, or clinical notes. PDF file names use the prescription id, not the patient name.
@@ -157,6 +168,6 @@ flutter test -d windows integration_test
 
 ## Limitations
 
-- Hive encryption protects the local database key in the platform secure store. It is not a substitute for device lock, backups, or a clinic record system.
+- Hive encryption protects the local database key in the platform secure store. Encrypted export is not a substitute for device lock, independent backups, or a clinic record system.
 - The Latin Noto subset used for PDF body text covers common English punctuation. Bangla uses Noto Sans Bengali.
 - Printing depends on the platform print dialog. Cancelling it is reported as cancelled, not as success.

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'cloud/clinic_sync_service.dart';
+import 'local/encrypted_backup_service.dart';
 import '../features/advice/repositories/advice_repository.dart';
 import '../features/medicine/repositories/medicine_repository.dart';
 import '../features/patients/repositories/patient_repository.dart';
@@ -15,6 +16,10 @@ final clinicSyncServiceProvider = Provider<ClinicSyncService>((ref) {
   final service = ClinicSyncService.unconfigured();
   ref.onDispose(() => unawaited(service.dispose()));
   return service;
+});
+
+final encryptedBackupServiceProvider = Provider<EncryptedBackupService>((ref) {
+  throw StateError('EncryptedBackupService was not initialized.');
 });
 
 final clinicSyncStatusProvider = StreamProvider<ClinicSyncStatus>((ref) async* {
