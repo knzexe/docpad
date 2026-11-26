@@ -42,6 +42,46 @@ void main() {
     await sync.dispose();
   });
 
+  test('queues every user data collection for cross-device sync', () async {
+    const collections = [
+      'profile',
+      'prescriptions',
+      'patients',
+      'advice',
+      'medicines',
+    ];
+    final stores = {
+      for (final collection in collections) collection: MemoryStore(),
+    };
+    final outbox = MemoryStore();
+    await outbox.write('__clinic_binding__', 'workspace-1');
+    final sync = ClinicSyncService(
+      client: null,
+      stores: stores,
+      outbox: outbox,
+    );
+
+    for (final collection in collections) {
+      final store = CloudSyncedKeyValueStore(
+        local: stores[collection]!,
+        syncService: sync,
+        collection: collection,
+      );
+      await store.write('record-1', jsonEncode({'collection': collection}));
+    }
+
+    final pending = [
+      for (final key in outbox.keys)
+        if (key.startsWith('pending:')) jsonDecode(outbox.read(key)!) as Map,
+    ];
+    expect(pending, hasLength(collections.length));
+    expect(
+      pending.map((change) => change['collection']).toSet(),
+      containsAll(collections),
+    );
+    await sync.dispose();
+  });
+
   test('clearing a collection queues its records before removing local data', () async {
     final local = MemoryStore();
     final outbox = MemoryStore();

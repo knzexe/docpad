@@ -11,7 +11,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Clinic cloud sync'), findsOneWidget);
+    expect(find.text('Personal cloud sync'), findsOneWidget);
     expect(find.textContaining('Cloud sync is not configured'), findsOneWidget);
     expect(find.text('Sign in'), findsNothing);
   });

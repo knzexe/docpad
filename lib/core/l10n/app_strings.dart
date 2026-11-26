@@ -271,14 +271,14 @@ class AppStrings {
   String get english => 'English';
   String get bangla => 'বাংলা';
   String get save => _t('Save', 'সংরক্ষণ');
-  String get cloudSync => _t('Clinic cloud sync', 'ক্লিনিক ক্লাউড সিঙ্ক');
+  String get cloudSync => _t('Personal cloud sync', 'ব্যক্তিগত ক্লাউড সিঙ্ক');
   String get cloudSyncDescription => _t(
-    'Sign in to share the clinic profile, prescriptions, patients, advice, and medicine library across this clinic’s devices.',
-    'সাইন ইন করলে এই ক্লিনিকের ডিভাইসগুলোর মধ্যে প্রোফাইল, প্রেসক্রিপশন, রোগী, পরামর্শ ও ওষুধের লাইব্রেরি শেয়ার হবে।',
+    'Sign in with the same account on each device to sync your profile, patient records, prescriptions with visit histories and medicine details, advice, and medicine library. Each account has its own private workspace.',
+    'প্রতিটি ডিভাইসে একই অ্যাকাউন্টে সাইন ইন করে প্রোফাইল, রোগীর তথ্য, সাক্ষাতের ইতিহাস ও ওষুধের বিবরণসহ প্রেসক্রিপশন, পরামর্শ এবং ওষুধের লাইব্রেরি সিঙ্ক করুন। প্রতিটি অ্যাকাউন্টের জন্য আলাদা ব্যক্তিগত ওয়ার্কস্পেস রয়েছে।',
   );
   String get cloudSyncWarning => _t(
-    'When this device first connects, its existing clinical records are uploaded to the linked clinic and shared with its members. Only continue on an approved clinic account and device.',
-    'এই ডিভাইস প্রথমবার যুক্ত হলে এর বিদ্যমান ক্লিনিক্যাল রেকর্ড যুক্ত ক্লিনিকে আপলোড হয়ে সদস্যদের সঙ্গে শেয়ার হবে। অনুমোদিত ক্লিনিক অ্যাকাউন্ট ও ডিভাইস ব্যবহার করুন।',
+    'When this account first connects, existing local clinical records on this device are added to its private workspace. Sign in with the same account on your other devices to access them.',
+    'এই অ্যাকাউন্ট প্রথমবার যুক্ত হলে এই ডিভাইসের বিদ্যমান ক্লিনিক্যাল রেকর্ড ব্যক্তিগত ওয়ার্কস্পেসে যোগ হবে। অন্য ডিভাইসে সেগুলো পেতে একই অ্যাকাউন্টে সাইন ইন করুন।',
   );
   String get cloudNotConfigured => _t(
     'Cloud sync is not configured. The app is currently using encrypted local storage only.',
@@ -289,22 +289,18 @@ class AppStrings {
     'Supabase সেটআপ অসম্পূর্ণ বা ভুল। প্রজেক্ট URL ও পাবলিক কী পরীক্ষা করুন।',
   );
   String get cloudSignedOut => _t(
-    'Sign in to sync clinic records.',
-    'ক্লিনিকের রেকর্ড সিঙ্ক করতে সাইন ইন করুন।',
+    'Sign in to sync your records across devices.',
+    'একাধিক ডিভাইসে আপনার রেকর্ড সিঙ্ক করতে সাইন ইন করুন।',
   );
   String get cloudConnecting =>
-      _t('Connecting to the clinic…', 'ক্লিনিকের সঙ্গে যুক্ত হচ্ছে…');
+      _t('Connecting to your workspace…', 'আপনার ওয়ার্কস্পেসে যুক্ত হচ্ছে…');
   String get cloudSyncing =>
-      _t('Syncing clinic records…', 'ক্লিনিকের রেকর্ড সিঙ্ক হচ্ছে…');
+      _t('Syncing your records…', 'আপনার রেকর্ড সিঙ্ক হচ্ছে…');
   String get cloudSynced =>
-      _t('Clinic records are up to date.', 'ক্লিনিকের রেকর্ড হালনাগাদ আছে।');
-  String get cloudNeedsMembership => _t(
-    'This account is not linked to a clinic. Ask the clinic administrator to grant access.',
-    'এই অ্যাকাউন্ট কোনো ক্লিনিকের সঙ্গে যুক্ত নয়। ক্লিনিক প্রশাসকের কাছে প্রবেশাধিকার চান।',
-  );
+      _t('Your records are up to date.', 'আপনার রেকর্ড হালনাগাদ আছে।');
   String get cloudDifferentClinic => _t(
-    'Sync is blocked because this device is already linked to a different clinic. Do not switch clinic accounts on a device containing clinical records.',
-    'এই ডিভাইস অন্য ক্লিনিকের সঙ্গে যুক্ত থাকায় সিঙ্ক বন্ধ। ক্লিনিক্যাল রেকর্ড থাকা ডিভাইসে অন্য ক্লিনিক অ্যাকাউন্ট ব্যবহার করবেন না।',
+    'Sync is blocked because this device is already linked to a different workspace. Do not switch accounts on a device containing clinical records.',
+    'এই ডিভাইস অন্য ওয়ার্কস্পেসের সঙ্গে যুক্ত থাকায় সিঙ্ক বন্ধ। ক্লিনিক্যাল রেকর্ড থাকা ডিভাইসে অন্য অ্যাকাউন্ট ব্যবহার করবেন না।',
   );
   String get cloudSyncFailed => _t(
     'Sync failed. Local records were kept; check the connection and try again.',

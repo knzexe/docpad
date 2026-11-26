@@ -22,18 +22,20 @@ flutter pub get
 flutter run
 ```
 
-## Supabase clinic sync
+## Supabase sync across your devices
 
 The app remains usable offline with its encrypted Hive database. When configured
-and signed in, the clinic profile, prescriptions, patients, advice templates,
-and medicine library sync through Supabase Realtime. Changes made offline are
-queued locally and uploaded when a clinic connection is available. App language
-preferences remain device-local.
+and signed in, your profile, patient records, prescriptions (including visit
+histories and prescribed medicine details), advice templates, and medicine
+library sync through Supabase Realtime. Changes made offline are queued locally
+and uploaded when a connection is available. PDFs can be generated on each
+device from synced records; exported PDF files and app language preferences
+remain device-local.
 
 Before enabling cloud sync:
 
-1. Create a Supabase project and run
-   `supabase/migrations/20261126154000_clinic_realtime.sql` in its SQL Editor.
+1. Create a Supabase project and run the SQL files in `supabase/migrations` in
+   timestamp order in its SQL Editor.
 2. Read the project URL and **publishable** key from the Supabase dashboard.
    Never put a database password or service-role/secret key in the app.
 3. Configure the app with:
@@ -44,32 +46,19 @@ Before enabling cloud sync:
 
    Use the same `--dart-define` values when producing a Windows or mobile
    release. Builds without both values use local storage only.
-4. Create an account in Settings. In the Supabase SQL Editor, create the clinic
-   and link the first account (replace the values with your clinic name and
-   account email):
+4. Create an account in Settings. After confirming the email, sign in with the
+   same account on each device. The first signed-in device creates a private
+   workspace for that account automatically. Existing local records on that
+   device are uploaded; other devices signed in to that account receive them.
 
-   ```sql
-   insert into public.clinics (name) values ('Clinic name') returning id;
-
-   insert into public.clinic_members (user_id, clinic_id, role)
-   select id, 'CLINIC_UUID'::uuid, 'admin'
-   from auth.users
-   where email = 'admin@example.com';
-   ```
-
-   Add further approved accounts to `clinic_members` as `member`. The app
-   intentionally cannot grant clinic membership itself. Each account can be
-   linked to one clinic per device.
-
-The migration enables Row Level Security and grants record access only to
-authenticated clinic members. It also enables Realtime for `app_records`.
-When a device first joins a clinic, its existing local records are uploaded to
-that clinic; all clinic members can access them. Signing out keeps local data
-and any queued changes on the device. “Erase clinical data” removes shared
-records on every device when connected, or queues those deletions while
-offline or signed out. A queued deletion is uploaded after signing back in to
-the same clinic. Supabase authentication sessions are stored using the
-platform's secure storage.
+The migrations enable Row Level Security and grant record access only to
+authenticated workspace members. Each account gets its own private workspace
+when it first signs in; the app has no user invitation or sharing flow. Signing
+out keeps local data and any queued changes on the device. “Erase clinical
+data” removes synced records on every device when connected, or queues those
+deletions while offline or signed out. A queued deletion is uploaded after
+signing back in to the same account. Supabase authentication sessions are
+stored using the platform's secure storage.
 
 Supabase configuration is not, by itself, a guarantee of healthcare privacy or
 regulatory compliance. Review data residency, retention, access, backups,

@@ -13,7 +13,6 @@ enum ClinicSyncPhase {
   connecting,
   syncing,
   synced,
-  needsMembership,
   differentClinic,
   error,
 }
@@ -174,7 +173,7 @@ class ClinicSyncService {
     final client = _requireClient();
     final user = client.auth.currentUser;
     if (user == null) {
-      throw StateError('Sign in before syncing clinic records.');
+      throw StateError('Sign in before syncing workspace records.');
     }
     await _scheduleAuthState(user.id);
     if (_clinicId != null) await _flushPending();
@@ -290,31 +289,25 @@ class ClinicSyncService {
 
     try {
       final client = _requireClient();
+      final outbox = _outbox;
+      if (outbox == null) {
+        throw StateError('The encrypted sync queue is unavailable.');
+      }
       final memberships = await client
           .from(_membershipTable)
           .select('clinic_id')
           .eq('user_id', userId)
           .limit(2);
       if (client.auth.currentUser?.id != userId) return;
-      if (memberships.isEmpty) {
-        _setStatus(ClinicSyncPhase.needsMembership);
+      final boundClinic = outbox.read(_bindingKey);
+      if (memberships.isEmpty && boundClinic != null) {
+        _setStatus(ClinicSyncPhase.differentClinic);
         return;
       }
-      if (memberships.length != 1) {
-        throw const FormatException(
-          'This account must belong to exactly one clinic.',
-        );
-      }
-
-      final clinicId = memberships.single['clinic_id'];
-      if (clinicId is! String || clinicId.isEmpty) {
-        throw const FormatException('Clinic membership is invalid.');
-      }
-      final outbox = _outbox;
-      if (outbox == null) {
-        throw StateError('The encrypted sync queue is unavailable.');
-      }
-      final boundClinic = outbox.read(_bindingKey);
+      final clinicId = memberships.isEmpty
+          ? await _createPersonalClinic(client, userId)
+          : _readClinicId(memberships);
+      if (client.auth.currentUser?.id != userId) return;
       if (boundClinic != null && boundClinic != clinicId) {
         _setStatus(ClinicSyncPhase.differentClinic);
         return;
@@ -333,6 +326,48 @@ class ClinicSyncService {
       AppLog.error('cloud-connect', error);
       _setStatus(ClinicSyncPhase.error);
     }
+  }
+
+  Future<String> _createPersonalClinic(
+    SupabaseClient client,
+    String userId,
+  ) async {
+    try {
+      await client.from('clinics').insert({'name': 'Personal workspace'});
+    } catch (error) {
+      final memberships = await client
+          .from(_membershipTable)
+          .select('clinic_id')
+          .eq('user_id', userId)
+          .limit(2);
+      if (client.auth.currentUser?.id == userId && memberships.isNotEmpty) {
+        return _readClinicId(memberships);
+      }
+      rethrow;
+    }
+
+    if (client.auth.currentUser?.id != userId) {
+      throw StateError('The signed-in account changed during setup.');
+    }
+    final memberships = await client
+        .from(_membershipTable)
+        .select('clinic_id')
+        .eq('user_id', userId)
+        .limit(2);
+    return _readClinicId(memberships);
+  }
+
+  String _readClinicId(List<dynamic> memberships) {
+    if (memberships.length != 1) {
+      throw const FormatException(
+        'This account must belong to exactly one workspace.',
+      );
+    }
+    final clinicId = memberships.single['clinic_id'];
+    if (clinicId is! String || clinicId.isEmpty) {
+      throw const FormatException('Workspace membership is invalid.');
+    }
+    return clinicId;
   }
 
   Future<void> _subscribe(String clinicId) async {

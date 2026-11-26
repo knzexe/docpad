@@ -165,7 +165,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ClinicSyncPhase.connecting => strings.cloudConnecting,
       ClinicSyncPhase.syncing => strings.cloudSyncing,
       ClinicSyncPhase.synced => strings.cloudSynced,
-      ClinicSyncPhase.needsMembership => strings.cloudNeedsMembership,
       ClinicSyncPhase.differentClinic => strings.cloudDifferentClinic,
       ClinicSyncPhase.error => strings.cloudSyncFailed,
     };
